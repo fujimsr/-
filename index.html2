@@ -1,11 +1,938 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>テスト</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>つかめ！将来の星 ⭐ 発表ひょうかフォーム</title>
+
+<!--
+  ================================================================
+  ★ Google Apps Script のセットアップ手順 ★
+
+  1. Google スプレッドシートを新規作成する
+
+  2. メニューの「拡張機能」→「Apps Script」を開く
+
+  3. このHTMLファイル末尾のコメントブロック内の Apps Script コードを
+     エディタに貼り付けて保存する（Ctrl+S）
+
+  4. 「デプロイ」→「新しいデプロイ」を選択する
+     ・種類：ウェブアプリ
+     ・実行ユーザー：自分（自分のGoogleアカウント）
+     ・アクセスできるユーザー：全員
+     → 「デプロイ」ボタンを押す
+
+  5. 表示された「ウェブアプリの URL」をコピーする
+
+  6. 下の GAS_URL の部分に貼り付ける（''の中に入れる）
+
+  ================================================================
+-->
+
+<style>
+/* ─────────────────────────────────────────────
+   リセット・ベース
+───────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3',
+               'Meiryo', 'メイリオ', 'Yu Gothic', 'YuGothic',
+               'Noto Sans JP', sans-serif;
+  background: #08001a;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  overflow-x: hidden;
+  color: #2c1810;
+}
+
+/* ─────────────────────────────────────────────
+   星空背景
+───────────────────────────────────────────── */
+#starsBg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 15% 15%, #1f005a 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 80%, #001240 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, #0a0025 0%, #08001a 100%);
+  pointer-events: none;
+}
+
+.star-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: twinkle ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1;   transform: scale(1);   }
+  50%       { opacity: 0.15; transform: scale(0.5); }
+}
+
+/* ─────────────────────────────────────────────
+   メインコンテナ
+───────────────────────────────────────────── */
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 540px;
+  padding: 16px 12px 48px;
+}
+
+/* ─────────────────────────────────────────────
+   カード
+───────────────────────────────────────────── */
+.card {
+  background: rgba(255, 252, 248, 0.98);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 215, 0, 0.35),
+    0 0 40px rgba(255, 180, 0, 0.08);
+}
+
+/* ─────────────────────────────────────────────
+   ヘッダー
+───────────────────────────────────────────── */
+.card-header {
+  background: linear-gradient(160deg, #12003a 0%, #2d0d6e 50%, #12003a 100%);
+  padding: 28px 24px 22px;
+  text-align: center;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.header-deco {
+  font-size: 26px;
+  letter-spacing: 10px;
+  margin-bottom: 10px;
+  animation: pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+.card-header h1 {
+  color: #FFD700;
+  font-size: clamp(18px, 5vw, 24px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 0 24px rgba(255, 215, 0, 0.55);
+  margin-bottom: 6px;
+}
+
+.card-header .subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+/* ─────────────────────────────────────────────
+   画面の切り替え（フォーム／ローディング／成功）
+───────────────────────────────────────────── */
+.screen {
+  display: none;
+}
+.screen.active {
+  display: block;
+}
+
+/* ─────────────────────────────────────────────
+   フォーム
+───────────────────────────────────────────── */
+.card-body {
+  padding: 24px 20px 28px;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d0d6e;
+  margin-bottom: 7px;
+  letter-spacing: 0.3px;
+}
+
+.required {
+  color: #d32f2f;
+  margin-left: 3px;
+  font-size: 13px;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #d9cef0;
+  border-radius: 12px;
+  font-size: 16px;      /* iOS でズームしないよう 16px 以上に */
+  font-family: inherit;
+  color: #1a0a30;
+  background: #f8f6ff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #b0a0cc;
+  font-size: 14px;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: #7b1fa2;
+  box-shadow: 0 0 0 3px rgba(123, 31, 162, 0.12);
+  background: #fff;
+}
+
+.form-input.is-invalid,
+.form-textarea.is-invalid {
+  border-color: #d32f2f;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.65;
+}
+
+.field-error {
+  font-size: 12px;
+  color: #d32f2f;
+  margin-top: 4px;
+  display: none;
+}
+.field-error.active {
+  display: block;
+}
+
+/* ─────────────────────────────────────────────
+   評価セクション（星評価）
+───────────────────────────────────────────── */
+.ratings-section {
+  background: linear-gradient(145deg, #fffbea, #fff8d6);
+  border: 2px solid #FFD700;
+  border-radius: 18px;
+  padding: 18px 16px;
+  margin-bottom: 20px;
+}
+
+.ratings-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5d3a00;
+  text-align: center;
+  margin-bottom: 18px;
+  letter-spacing: 0.5px;
+}
+
+.rating-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.rating-item:last-child {
+  margin-bottom: 0;
+}
+
+.rating-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3e1a00;
+}
+
+.star-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.star-btn {
+  font-size: 34px;
+  line-height: 1;
+  color: #ddd;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px;
+  transition: color 0.12s, transform 0.1s, text-shadow 0.12s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  /* 最低タッチサイズを確保 */
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star-btn.lit {
+  color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 200, 0, 0.75);
+}
+
+.star-btn.preview {
+  color: #FFC107;
+  text-shadow: 0 0 6px rgba(255, 193, 7, 0.5);
+}
+
+.star-btn:active {
+  transform: scale(0.88);
+}
+
+.star-value-label {
+  font-size: 11px;
+  color: #888;
+  margin-left: 6px;
+  min-width: 60px;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────
+   区切り線
+───────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #d9cef0, transparent);
+  margin: 20px 0;
+}
+
+/* ─────────────────────────────────────────────
+   送信ボタン
+───────────────────────────────────────────── */
+.btn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #e65c00 0%, #f9a825 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 900;
+  font-family: inherit;
+  letter-spacing: 3px;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(230, 92, 0, 0.42);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  touch-action: manipulation;
+}
+
+.btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(230, 92, 0, 0.52);
+}
+
+.btn-submit:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(230, 92, 0, 0.3);
+}
+
+.btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─────────────────────────────────────────────
+   エラーメッセージ
+───────────────────────────────────────────── */
+.error-banner {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fce4ec;
+  border: 1px solid #e57373;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #c62828;
+  line-height: 1.6;
+  display: none;
+}
+.error-banner.active {
+  display: block;
+}
+
+/* ─────────────────────────────────────────────
+   ローディング画面
+───────────────────────────────────────────── */
+.loading-screen {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.spin {
+  font-size: 52px;
+  display: inline-block;
+  animation: spin 1.2s linear infinite;
+  margin-bottom: 18px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.loading-screen p {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d0d6e;
+  letter-spacing: 1px;
+}
+
+/* ─────────────────────────────────────────────
+   成功画面
+───────────────────────────────────────────── */
+.success-screen {
+  padding: 48px 24px 52px;
+  text-align: center;
+}
+
+.success-emoji {
+  font-size: 80px;
+  display: block;
+  margin-bottom: 18px;
+  animation: popIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  70%  { transform: scale(1.18) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.success-screen h2 {
+  font-size: 28px;
+  color: #e65c00;
+  font-weight: 900;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.success-screen .success-msg {
+  font-size: 14px;
+  color: #5d3a00;
+  line-height: 1.7;
+  margin-bottom: 26px;
+}
+
+.success-stars-row {
+  font-size: 22px;
+  letter-spacing: 8px;
+  margin-bottom: 30px;
+  animation: float 2.2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+.btn-reset {
+  padding: 14px 36px;
+  background: linear-gradient(135deg, #2d0d6e, #7b1fa2);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(45, 13, 110, 0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+  touch-action: manipulation;
+}
+
+.btn-reset:active {
+  transform: scale(0.96);
+}
+
+/* ─────────────────────────────────────────────
+   フッター
+───────────────────────────────────────────── */
+.card-footer {
+  background: #f3f0fa;
+  border-top: 1px solid #e0d4f0;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 11px;
+  color: #a090c0;
+  letter-spacing: 0.5px;
+}
+
+/* ─────────────────────────────────────────────
+   シェイクアニメーション（バリデーション失敗）
+───────────────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.35s ease;
+}
+</style>
 </head>
 <body>
-  <h1>GitHub Pages 動作確認OK</h1>
+
+<!-- ── 星空背景 ── -->
+<div id="starsBg"></div>
+
+<!-- ── メインコンテナ ── -->
+<div class="container">
+  <div class="card">
+
+    <!-- ヘッダー -->
+    <div class="card-header">
+      <div class="header-deco">⭐ ⭐ ⭐</div>
+      <h1>つかめ！将来の星</h1>
+      <p class="subtitle">発表のひょうかを送ってね ✉️</p>
+    </div>
+
+    <!-- ── フォーム画面 ── -->
+    <div id="screenForm" class="screen active">
+      <div class="card-body">
+        <form id="feedbackForm" novalidate>
+
+          <!-- ひょうかする人の名前 -->
+          <div class="form-group">
+            <label class="form-label" for="reviewerName">
+              ひょうかする人の名前（あなたの名前）<span class="required">※</span>
+            </label>
+            <input
+              type="text"
+              id="reviewerName"
+              class="form-input"
+              placeholder="例：山田 太郎"
+              autocomplete="name"
+              maxlength="50"
+            >
+            <div class="field-error" id="errReviewer">名前を入力してください</div>
+          </div>
+
+          <!-- 発表した人の名前 -->
+          <div class="form-group">
+            <label class="form-label" for="presenterName">
+              発表した人の名前<span class="required">※</span>
+            </label>
+            <input
+              type="text"
+              id="presenterName"
+              class="form-input"
+              placeholder="例：田中 花子"
+              maxlength="50"
+            >
+            <div class="field-error" id="errPresenter">名前を入力してください</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- 星評価 -->
+          <div class="ratings-section">
+            <p class="ratings-title">⭐ ひょうか（星をタップして評価してね！）⭐</p>
+
+            <!-- ①わかりやすさ -->
+            <div class="rating-item">
+              <span class="rating-label">① わかりやすかった</span>
+              <div class="star-row" data-key="clarity">
+                <button type="button" class="star-btn" data-val="1">★</button>
+                <button type="button" class="star-btn" data-val="2">★</button>
+                <button type="button" class="star-btn" data-val="3">★</button>
+                <button type="button" class="star-btn" data-val="4">★</button>
+                <button type="button" class="star-btn" data-val="5">★</button>
+                <span class="star-value-label" id="lb-clarity"></span>
+              </div>
+            </div>
+
+            <!-- ②おもしろさ -->
+            <div class="rating-item">
+              <span class="rating-label">② 内容がおもしろかった</span>
+              <div class="star-row" data-key="interesting">
+                <button type="button" class="star-btn" data-val="1">★</button>
+                <button type="button" class="star-btn" data-val="2">★</button>
+                <button type="button" class="star-btn" data-val="3">★</button>
+                <button type="button" class="star-btn" data-val="4">★</button>
+                <button type="button" class="star-btn" data-val="5">★</button>
+                <span class="star-value-label" id="lb-interesting"></span>
+              </div>
+            </div>
+
+            <!-- ③気持ちが伝わった -->
+            <div class="rating-item">
+              <span class="rating-label">③ きもちがつたわった</span>
+              <div class="star-row" data-key="passion">
+                <button type="button" class="star-btn" data-val="1">★</button>
+                <button type="button" class="star-btn" data-val="2">★</button>
+                <button type="button" class="star-btn" data-val="3">★</button>
+                <button type="button" class="star-btn" data-val="4">★</button>
+                <button type="button" class="star-btn" data-val="5">★</button>
+                <span class="star-value-label" id="lb-passion"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 応援コメント -->
+          <div class="form-group">
+            <label class="form-label" for="comment">
+              応援コメント（一言メッセージ）
+            </label>
+            <textarea
+              id="comment"
+              class="form-textarea"
+              placeholder="発表のよかったところや、がんばったことへの応援の言葉を書いてね！"
+              maxlength="300"
+            ></textarea>
+          </div>
+
+          <!-- 送信ボタン -->
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <span>⭐</span>
+            <span>送 る</span>
+            <span>⭐</span>
+          </button>
+
+          <!-- エラーバナー -->
+          <div class="error-banner" id="errorBanner">
+            送信できませんでした。<br>
+            もう一度試してみてください。<br>
+            <small>（エラーが続く場合は先生に知らせてね）</small>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── ローディング画面 ── -->
+    <div id="screenLoading" class="screen">
+      <div class="loading-screen">
+        <span class="spin">⭐</span>
+        <p>送っています…</p>
+      </div>
+    </div>
+
+    <!-- ── 成功画面 ── -->
+    <div id="screenSuccess" class="screen">
+      <div class="success-screen">
+        <span class="success-emoji">🌟</span>
+        <h2>送れたよ！</h2>
+        <p class="success-msg">
+          ひょうかを送ってくれてありがとう！<br>
+          発表してくれた人への応援が届くよ🎉
+        </p>
+        <div class="success-stars-row">⭐ ⭐ ⭐ ⭐ ⭐</div>
+        <button class="btn-reset" id="resetBtn">続けてひょうかする</button>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="card-footer">つかめ！将来の星 ✦ 発表ひょうかフォーム</div>
+
+  </div><!-- /.card -->
+</div><!-- /.container -->
+
+<script>
+/* ================================================================
+   ★ Google Apps Script の URL をここに設定してください ★
+
+   例：'https://script.google.com/macros/s/xxxxxxxxx/exec'
+   ================================================================ */
+const GAS_URL = '';   /* ← ここに貼り付ける */
+/* ================================================================ */
+
+/* ────────────────────────────────────────────
+   星評価の状態管理
+──────────────────────────────────────────── */
+const ratings = { clarity: 0, interesting: 0, passion: 0 };
+
+const RATING_LABELS = [
+  '', // 0 は未選択
+  '★　もう少し',
+  '★★　ふつう',
+  '★★★　よかった',
+  '★★★★　とてもよかった',
+  '★★★★★　さいこう！',
+];
+
+/* 各 star-row を初期化 */
+document.querySelectorAll('.star-row').forEach(row => {
+  const key   = row.dataset.key;
+  const btns  = [...row.querySelectorAll('.star-btn')];
+  const label = document.getElementById(`lb-${key}`);
+
+  /* クリック */
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      ratings[key] = parseInt(btn.dataset.val, 10);
+      renderStars(btns, ratings[key]);
+      if (label) label.textContent = RATING_LABELS[ratings[key]] || '';
+    });
+  });
+
+  /* マウスオーバー（PC） */
+  btns.forEach(btn => {
+    btn.addEventListener('mouseenter', () => renderStars(btns, parseInt(btn.dataset.val, 10), true));
+    btn.addEventListener('mouseleave', () => renderStars(btns, ratings[key]));
+  });
+});
+
+function renderStars(btns, value, isPreview = false) {
+  btns.forEach(btn => {
+    const v = parseInt(btn.dataset.val, 10);
+    btn.classList.toggle('lit',     !isPreview && v <= value);
+    btn.classList.toggle('preview',  isPreview && v <= value);
+    if (!isPreview) btn.classList.remove('preview');
+  });
+}
+
+/* ────────────────────────────────────────────
+   画面切り替え
+──────────────────────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ────────────────────────────────────────────
+   バリデーション
+──────────────────────────────────────────── */
+function validate() {
+  let ok = true;
+
+  const fields = [
+    { id: 'reviewerName',  errId: 'errReviewer'  },
+    { id: 'presenterName', errId: 'errPresenter'  },
+  ];
+
+  fields.forEach(f => {
+    const el  = document.getElementById(f.id);
+    const err = document.getElementById(f.errId);
+    const empty = !el.value.trim();
+    el.classList.toggle('is-invalid', empty);
+    err.classList.toggle('active', empty);
+    if (empty) ok = false;
+  });
+
+  return ok;
+}
+
+/* ────────────────────────────────────────────
+   フォーム送信
+──────────────────────────────────────────── */
+document.getElementById('feedbackForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  document.getElementById('errorBanner').classList.remove('active');
+
+  if (!validate()) {
+    /* バリデーション失敗：シェイクアニメーション */
+    const form = document.getElementById('feedbackForm');
+    form.classList.remove('shake');
+    void form.offsetWidth;  /* reflow でリセット */
+    form.classList.add('shake');
+    return;
+  }
+
+  const payload = {
+    reviewerName:  document.getElementById('reviewerName').value.trim(),
+    presenterName: document.getElementById('presenterName').value.trim(),
+    clarity:       ratings.clarity,
+    interesting:   ratings.interesting,
+    passion:       ratings.passion,
+    comment:       document.getElementById('comment').value.trim(),
+    timestamp:     new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+  };
+
+  showScreen('screenLoading');
+
+  /* GAS URL が未設定のときはテストモード */
+  if (!GAS_URL) {
+    await sleep(1000);
+    console.log('[テストモード] 送信データ:', payload);
+    showScreen('screenSuccess');
+    return;
+  }
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showScreen('screenSuccess');
+  } catch (err) {
+    console.error('送信エラー:', err);
+    showScreen('screenForm');
+    document.getElementById('errorBanner').classList.add('active');
+  }
+});
+
+/* ────────────────────────────────────────────
+   リセット
+──────────────────────────────────────────── */
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('feedbackForm').reset();
+  document.getElementById('errorBanner').classList.remove('active');
+
+  /* 星をリセット */
+  Object.keys(ratings).forEach(key => { ratings[key] = 0; });
+  document.querySelectorAll('.star-row').forEach(row => {
+    const btns = [...row.querySelectorAll('.star-btn')];
+    renderStars(btns, 0);
+    const label = document.getElementById(`lb-${row.dataset.key}`);
+    if (label) label.textContent = '';
+  });
+
+  /* バリデーションリセット */
+  document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+  document.querySelectorAll('.field-error.active').forEach(el => el.classList.remove('active'));
+
+  showScreen('screenForm');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ────────────────────────────────────────────
+   星空生成
+──────────────────────────────────────────── */
+(function createStars() {
+  const bg = document.getElementById('starsBg');
+  for (let i = 0; i < 140; i++) {
+    const el  = document.createElement('div');
+    el.className = 'star-dot';
+    const size = Math.random() * 2.4 + 0.5;
+    el.style.cssText = [
+      `width:${size}px`,
+      `height:${size}px`,
+      `left:${Math.random() * 100}%`,
+      `top:${Math.random() * 100}%`,
+      `animation-duration:${(Math.random() * 3 + 1.5).toFixed(1)}s`,
+      `animation-delay:${(Math.random() * 4).toFixed(1)}s`,
+      `opacity:${(Math.random() * 0.6 + 0.3).toFixed(2)}`,
+    ].join(';');
+    bg.appendChild(el);
+  }
+})();
+
+/* ────────────────────────────────────────────
+   ユーティリティ
+──────────────────────────────────────────── */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+</script>
+
+<!--
+  ================================================================
+  ★★★  Google Apps Script のコード  ★★★
+
+  以下を Google Apps Script エディタに貼り付けて保存・デプロイしてください。
+
+  ================================================================
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getActiveSheet();
+
+    // 1 行目にヘッダーがなければ追加
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        'タイムスタンプ',
+        'ひょうかした人',
+        '発表した人',
+        'わかりやすさ（1〜5）',
+        'おもしろさ（1〜5）',
+        'きもちがつたわった（1〜5）',
+        '応援コメント'
+      ]);
+
+      // ヘッダー行の書式設定
+      var headerRange = sheet.getRange(1, 1, 1, 7);
+      headerRange.setBackground('#2d0d6e');
+      headerRange.setFontColor('#FFD700');
+      headerRange.setFontWeight('bold');
+      headerRange.setHorizontalAlignment('center');
+      sheet.setFrozenRows(1);
+      sheet.setColumnWidth(1, 160);
+      sheet.setColumnWidth(2, 130);
+      sheet.setColumnWidth(3, 130);
+      sheet.setColumnWidth(4, 120);
+      sheet.setColumnWidth(5, 120);
+      sheet.setColumnWidth(6, 150);
+      sheet.setColumnWidth(7, 280);
+    }
+
+    // データを追記
+    sheet.appendRow([
+      data.timestamp     || new Date().toLocaleString('ja-JP'),
+      data.reviewerName  || '',
+      data.presenterName || '',
+      data.clarity       || 0,
+      data.interesting   || 0,
+      data.passion       || 0,
+      data.comment       || ''
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'success' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+  ================================================================
+-->
+
 </body>
 </html>
