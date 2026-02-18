@@ -2,1031 +2,937 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>棒人間くじ引き</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>つかめ！将来の星 ⭐ 発表ひょうかフォーム</title>
+
+<!--
+  ================================================================
+  ★ Google Apps Script のセットアップ手順 ★
+
+  1. Google スプレッドシートを新規作成する
+
+  2. メニューの「拡張機能」→「Apps Script」を開く
+
+  3. このHTMLファイル末尾のコメントブロック内の Apps Script コードを
+     エディタに貼り付けて保存する（Ctrl+S）
+
+  4. 「デプロイ」→「新しいデプロイ」を選択する
+     ・種類：ウェブアプリ
+     ・実行ユーザー：自分（自分のGoogleアカウント）
+     ・アクセスできるユーザー：全員
+     → 「デプロイ」ボタンを押す
+
+  5. 表示された「ウェブアプリの URL」をコピーする
+
+  6. 下の GAS_URL の部分に貼り付ける（''の中に入れる）
+
+  ================================================================
+-->
+
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* ─────────────────────────────────────────────
+   リセット・ベース
+───────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  @keyframes bgShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+html {
+  -webkit-text-size-adjust: 100%;
+  font-size: 16px;
+}
 
-  body {
-    font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    background-size: 400% 400%;
-    animation: bgShift 15s ease infinite;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    color: #fff;
-  }
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3',
+               'Meiryo', 'メイリオ', 'Yu Gothic', 'YuGothic',
+               'Noto Sans JP', sans-serif;
+  background: #08001a;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  overflow-x: hidden;
+  color: #2c1810;
+}
 
-  h1 {
-    font-size: 2.2rem;
-    margin-bottom: 10px;
-    text-shadow: 0 0 20px rgba(255, 200, 50, 0.8);
-    letter-spacing: 4px;
-  }
+/* ─────────────────────────────────────────────
+   星空背景
+───────────────────────────────────────────── */
+#starsBg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 15% 15%, #1f005a 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 80%, #001240 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, #0a0025 0%, #08001a 100%);
+  pointer-events: none;
+}
 
-  .subtitle {
-    font-size: 0.95rem;
-    color: #aaa;
-    margin-bottom: 20px;
-  }
+.star-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: twinkle ease-in-out infinite;
+}
 
-  /* --- Stage --- */
-  .stage-container {
-    position: relative;
-    width: 700px;
-    max-width: 95vw;
-  }
+@keyframes twinkle {
+  0%, 100% { opacity: 1;   transform: scale(1);   }
+  50%       { opacity: 0.15; transform: scale(0.5); }
+}
 
-  canvas#stageCanvas {
-    width: 100%;
-    height: 360px;
-    border-radius: 16px;
-    background: radial-gradient(ellipse at center bottom, #1a1a40 0%, #0d0d2b 100%);
-    box-shadow: 0 0 40px rgba(100, 80, 255, 0.3);
-  }
+/* ─────────────────────────────────────────────
+   メインコンテナ
+───────────────────────────────────────────── */
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 540px;
+  padding: 16px 12px 48px;
+}
 
-  /* --- Controls --- */
-  .controls {
-    margin-top: 18px;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-  }
+/* ─────────────────────────────────────────────
+   カード
+───────────────────────────────────────────── */
+.card {
+  background: rgba(255, 252, 248, 0.98);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 215, 0, 0.35),
+    0 0 40px rgba(255, 180, 0, 0.08);
+}
 
-  .item-input {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
+/* ─────────────────────────────────────────────
+   ヘッダー
+───────────────────────────────────────────── */
+.card-header {
+  background: linear-gradient(160deg, #12003a 0%, #2d0d6e 50%, #12003a 100%);
+  padding: 28px 24px 22px;
+  text-align: center;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
 
-  .item-input input {
-    padding: 10px 14px;
-    border: 2px solid #555;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    font-size: 1rem;
-    width: 180px;
-    outline: none;
-    transition: border-color 0.3s;
-  }
-  .item-input input:focus { border-color: #f0c040; }
+.card-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
 
-  .btn {
-    padding: 10px 22px;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.25s;
-    letter-spacing: 1px;
-  }
-  .btn:active { transform: scale(0.95); }
+.header-deco {
+  font-size: 26px;
+  letter-spacing: 10px;
+  margin-bottom: 10px;
+  animation: pulse 2.5s ease-in-out infinite;
+}
 
-  .btn-add {
-    background: linear-gradient(135deg, #43e97b, #38f9d7);
-    color: #1a1a40;
-  }
-  .btn-add:hover { box-shadow: 0 0 16px rgba(67, 233, 123, 0.6); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
 
-  .btn-draw {
-    background: linear-gradient(135deg, #f7971e, #ffd200);
-    color: #1a1a40;
-    font-size: 1.15rem;
-    padding: 12px 36px;
-  }
-  .btn-draw:hover { box-shadow: 0 0 24px rgba(255, 210, 0, 0.7); }
-  .btn-draw:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
+.card-header h1 {
+  color: #FFD700;
+  font-size: clamp(18px, 5vw, 24px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 0 24px rgba(255, 215, 0, 0.55);
+  margin-bottom: 6px;
+}
 
-  .btn-reset {
-    background: linear-gradient(135deg, #eb3349, #f45c43);
-    color: #fff;
-  }
-  .btn-reset:hover { box-shadow: 0 0 16px rgba(235, 51, 73, 0.6); }
+.card-header .subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
 
-  /* --- Items list --- */
-  .items-bar {
-    margin-top: 14px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    max-width: 700px;
-  }
+/* ─────────────────────────────────────────────
+   画面の切り替え（フォーム／ローディング／成功）
+───────────────────────────────────────────── */
+.screen {
+  display: none;
+}
+.screen.active {
+  display: block;
+}
 
-  .item-chip {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.3s;
-  }
-  .item-chip.drawn {
-    opacity: 0.35;
-    text-decoration: line-through;
-  }
-  .item-chip .remove {
-    cursor: pointer;
-    color: #f66;
-    font-weight: bold;
-    font-size: 1.1rem;
-    line-height: 1;
-  }
+/* ─────────────────────────────────────────────
+   フォーム
+───────────────────────────────────────────── */
+.card-body {
+  padding: 24px 20px 28px;
+}
 
-  /* --- Result overlay --- */
-  .result-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    backdrop-filter: blur(6px);
-  }
-  .result-overlay.show { display: flex; }
+.form-group {
+  margin-bottom: 18px;
+}
 
-  .result-card {
-    background: linear-gradient(145deg, #2d2b55, #1e1b4b);
-    border: 3px solid #ffd200;
-    border-radius: 24px;
-    padding: 40px 60px;
-    text-align: center;
-    box-shadow: 0 0 60px rgba(255, 210, 0, 0.4);
-    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
-    overflow: hidden;
-  }
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d0d6e;
+  margin-bottom: 7px;
+  letter-spacing: 0.3px;
+}
 
-  @keyframes popIn {
-    0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-  }
+.required {
+  color: #d32f2f;
+  margin-left: 3px;
+  font-size: 13px;
+}
 
-  .result-card h2 {
-    font-size: 1.2rem;
-    color: #ffd200;
-    margin-bottom: 10px;
-  }
-  .result-card .result-text {
-    font-size: 3rem;
-    font-weight: 900;
-    background: linear-gradient(90deg, #ffd200, #ff6a00, #ffd200);
-    background-size: 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shimmer 2s linear infinite;
-  }
-  @keyframes shimmer {
-    0% { background-position: -200% center; }
-    100% { background-position: 200% center; }
-  }
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #d9cef0;
+  border-radius: 12px;
+  font-size: 16px;      /* iOS でズームしないよう 16px 以上に */
+  font-family: inherit;
+  color: #1a0a30;
+  background: #f8f6ff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
 
-  .result-card .close-btn {
-    margin-top: 24px;
-    padding: 10px 30px;
-    border: 2px solid #ffd200;
-    background: transparent;
-    color: #ffd200;
-    border-radius: 10px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .result-card .close-btn:hover {
-    background: #ffd200;
-    color: #1e1b4b;
-  }
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #b0a0cc;
+  font-size: 14px;
+}
 
-  /* --- Firework canvas --- */
-  canvas#fwCanvas {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 200;
-  }
+.form-input:focus,
+.form-textarea:focus {
+  border-color: #7b1fa2;
+  box-shadow: 0 0 0 3px rgba(123, 31, 162, 0.12);
+  background: #fff;
+}
 
-  /* --- Presets --- */
-  .presets {
-    margin-top: 10px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .preset-btn {
-    padding: 6px 14px;
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 8px;
-    background: rgba(255,255,255,0.06);
-    color: #ccc;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .preset-btn:hover {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-  }
+.form-input.is-invalid,
+.form-textarea.is-invalid {
+  border-color: #d32f2f;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.65;
+}
+
+.field-error {
+  font-size: 12px;
+  color: #d32f2f;
+  margin-top: 4px;
+  display: none;
+}
+.field-error.active {
+  display: block;
+}
+
+/* ─────────────────────────────────────────────
+   評価セクション（星評価）
+───────────────────────────────────────────── */
+.ratings-section {
+  background: linear-gradient(145deg, #fffbea, #fff8d6);
+  border: 2px solid #FFD700;
+  border-radius: 18px;
+  padding: 18px 16px;
+  margin-bottom: 20px;
+}
+
+.ratings-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5d3a00;
+  text-align: center;
+  margin-bottom: 18px;
+  letter-spacing: 0.5px;
+}
+
+.rating-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.rating-item:last-child {
+  margin-bottom: 0;
+}
+
+.rating-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3e1a00;
+}
+
+.star-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.star-btn {
+  font-size: 34px;
+  line-height: 1;
+  color: #ddd;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px;
+  transition: color 0.12s, transform 0.1s, text-shadow 0.12s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  /* 最低タッチサイズを確保 */
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star-btn.lit {
+  color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 200, 0, 0.75);
+}
+
+.star-btn.preview {
+  color: #FFC107;
+  text-shadow: 0 0 6px rgba(255, 193, 7, 0.5);
+}
+
+.star-btn:active {
+  transform: scale(0.88);
+}
+
+.star-value-label {
+  font-size: 11px;
+  color: #888;
+  margin-left: 6px;
+  min-width: 60px;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────
+   区切り線
+───────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #d9cef0, transparent);
+  margin: 20px 0;
+}
+
+/* ─────────────────────────────────────────────
+   送信ボタン
+───────────────────────────────────────────── */
+.btn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #e65c00 0%, #f9a825 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 900;
+  font-family: inherit;
+  letter-spacing: 3px;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(230, 92, 0, 0.42);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  touch-action: manipulation;
+}
+
+.btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(230, 92, 0, 0.52);
+}
+
+.btn-submit:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(230, 92, 0, 0.3);
+}
+
+.btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─────────────────────────────────────────────
+   エラーメッセージ
+───────────────────────────────────────────── */
+.error-banner {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fce4ec;
+  border: 1px solid #e57373;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #c62828;
+  line-height: 1.6;
+  display: none;
+}
+.error-banner.active {
+  display: block;
+}
+
+/* ─────────────────────────────────────────────
+   ローディング画面
+───────────────────────────────────────────── */
+.loading-screen {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.spin {
+  font-size: 52px;
+  display: inline-block;
+  animation: spin 1.2s linear infinite;
+  margin-bottom: 18px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.loading-screen p {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d0d6e;
+  letter-spacing: 1px;
+}
+
+/* ─────────────────────────────────────────────
+   成功画面
+───────────────────────────────────────────── */
+.success-screen {
+  padding: 48px 24px 52px;
+  text-align: center;
+}
+
+.success-emoji {
+  font-size: 80px;
+  display: block;
+  margin-bottom: 18px;
+  animation: popIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  70%  { transform: scale(1.18) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.success-screen h2 {
+  font-size: 28px;
+  color: #e65c00;
+  font-weight: 900;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.success-screen .success-msg {
+  font-size: 14px;
+  color: #5d3a00;
+  line-height: 1.7;
+  margin-bottom: 26px;
+}
+
+.success-stars-row {
+  font-size: 22px;
+  letter-spacing: 8px;
+  margin-bottom: 30px;
+  animation: float 2.2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+.btn-reset {
+  padding: 14px 36px;
+  background: linear-gradient(135deg, #2d0d6e, #7b1fa2);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(45, 13, 110, 0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+  touch-action: manipulation;
+}
+
+.btn-reset:active {
+  transform: scale(0.96);
+}
+
+/* ─────────────────────────────────────────────
+   フッター
+───────────────────────────────────────────── */
+.card-footer {
+  background: #f3f0fa;
+  border-top: 1px solid #e0d4f0;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 11px;
+  color: #a090c0;
+  letter-spacing: 0.5px;
+}
+
+/* ─────────────────────────────────────────────
+   シェイクアニメーション（バリデーション失敗）
+───────────────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.35s ease;
+}
 </style>
 </head>
 <body>
 
-<h1>棒人間くじ引き</h1>
-<p class="subtitle">アイテムを追加して、運命の一引きを!</p>
+<!-- ── 星空背景 ── -->
+<div id="starsBg"></div>
 
-<div class="stage-container">
-  <canvas id="stageCanvas"></canvas>
-</div>
+<!-- ── メインコンテナ ── -->
+<div class="container">
+  <div class="card">
 
-<div class="controls">
-  <div class="item-input">
-    <input type="text" id="itemInput" placeholder="くじの項目を入力..." maxlength="20">
-    <button class="btn btn-add" onclick="addItem()">追加</button>
-  </div>
-  <button class="btn btn-draw" id="drawBtn" onclick="startDraw()" disabled>くじを引く!</button>
-  <button class="btn btn-reset" onclick="resetAll()">リセット</button>
-</div>
+    <!-- ヘッダー -->
+    <div class="card-header">
+      <div class="header-deco">⭐ ⭐ ⭐</div>
+      <h1>つかめ！将来の星</h1>
+      <p class="subtitle">発表のひょうかを送ってね ✉️</p>
+    </div>
 
-<div class="presets">
-  <button class="preset-btn" onclick="loadPreset('omikuji')">おみくじ</button>
-  <button class="preset-btn" onclick="loadPreset('janken')">じゃんけん</button>
-  <button class="preset-btn" onclick="loadPreset('lunch')">ランチ</button>
-  <button class="preset-btn" onclick="loadPreset('penalty')">罰ゲーム</button>
-</div>
+    <!-- ── フォーム画面 ── -->
+    <div id="screenForm" class="screen active">
+      <div class="card-body">
+        <form id="feedbackForm" novalidate>
 
-<div class="items-bar" id="itemsBar"></div>
+          <!-- ひょうかする人の名前 -->
+          <div class="form-group">
+            <label class="form-label" for="reviewerName">
+              ひょうかする人の名前（あなたの名前）<span class="required">※</span>
+            </label>
+            <input
+              type="text"
+              id="reviewerName"
+              class="form-input"
+              placeholder="例：山田 太郎"
+              autocomplete="name"
+              maxlength="50"
+            >
+            <div class="field-error" id="errReviewer">名前を入力してください</div>
+          </div>
 
-<!-- Result overlay -->
-<div class="result-overlay" id="resultOverlay">
-  <div class="result-card">
-    <h2>結果発表!</h2>
-    <div class="result-text" id="resultText"></div>
-    <canvas id="miniStickCanvas" width="200" height="160"></canvas>
-    <br>
-    <button class="close-btn" onclick="closeResult()">OK!</button>
-  </div>
-</div>
+          <!-- 発表した人の名前 -->
+          <div class="form-group">
+            <label class="form-label" for="presenterName">
+              発表した人の名前<span class="required">※</span>
+            </label>
+            <input
+              type="text"
+              id="presenterName"
+              class="form-input"
+              placeholder="例：田中 花子"
+              maxlength="50"
+            >
+            <div class="field-error" id="errPresenter">名前を入力してください</div>
+          </div>
 
-<!-- Fireworks canvas -->
-<canvas id="fwCanvas"></canvas>
+          <div class="divider"></div>
+
+          <!-- 星評価 -->
+          <div class="ratings-section">
+            <p class="ratings-title">⭐ ひょうか（星をタップして評価してね！）⭐</p>
+
+            <!-- ①わかりやすさ -->
+            <div class="rating-item">
+              <span class="rating-label">① わかりやすかった</span>
+              <div class="star-row" data-key="clarity">
+                <button type="button" class="star-btn" data-val="1">★</button>
+                <button type="button" class="star-btn" data-val="2">★</button>
+                <button type="button" class="star-btn" data-val="3">★</button>
+                <button type="button" class="star-btn" data-val="4">★</button>
+                <button type="button" class="star-btn" data-val="5">★</button>
+                <span class="star-value-label" id="lb-clarity"></span>
+              </div>
+            </div>
+
+            <!-- ②おもしろさ -->
+            <div class="rating-item">
+              <span class="rating-label">② 内容がおもしろかった</span>
+              <div class="star-row" data-key="interesting">
+                <button type="button" class="star-btn" data-val="1">★</button>
+                <button type="button" class="star-btn" data-val="2">★</button>
+                <button type="button" class="star-btn" data-val="3">★</button>
+                <button type="button" class="star-btn" data-val="4">★</button>
+                <button type="button" class="star-btn" data-val="5">★</button>
+                <span class="star-value-label" id="lb-interesting"></span>
+              </div>
+            </div>
+
+            <!-- ③気持ちが伝わった -->
+            <div class="rating-item">
+              <span class="rating-label">③ きもちがつたわった</span>
+              <div class="star-row" data-key="passion">
+                <button type="button" class="star-btn" data-val="1">★</button>
+                <button type="button" class="star-btn" data-val="2">★</button>
+                <button type="button" class="star-btn" data-val="3">★</button>
+                <button type="button" class="star-btn" data-val="4">★</button>
+                <button type="button" class="star-btn" data-val="5">★</button>
+                <span class="star-value-label" id="lb-passion"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 応援コメント -->
+          <div class="form-group">
+            <label class="form-label" for="comment">
+              応援コメント（一言メッセージ）
+            </label>
+            <textarea
+              id="comment"
+              class="form-textarea"
+              placeholder="発表のよかったところや、がんばったことへの応援の言葉を書いてね！"
+              maxlength="300"
+            ></textarea>
+          </div>
+
+          <!-- 送信ボタン -->
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <span>⭐</span>
+            <span>送 る</span>
+            <span>⭐</span>
+          </button>
+
+          <!-- エラーバナー -->
+          <div class="error-banner" id="errorBanner">
+            送信できませんでした。<br>
+            もう一度試してみてください。<br>
+            <small>（エラーが続く場合は先生に知らせてね）</small>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── ローディング画面 ── -->
+    <div id="screenLoading" class="screen">
+      <div class="loading-screen">
+        <span class="spin">⭐</span>
+        <p>送っています…</p>
+      </div>
+    </div>
+
+    <!-- ── 成功画面 ── -->
+    <div id="screenSuccess" class="screen">
+      <div class="success-screen">
+        <span class="success-emoji">🌟</span>
+        <h2>送れたよ！</h2>
+        <p class="success-msg">
+          ひょうかを送ってくれてありがとう！<br>
+          発表してくれた人への応援が届くよ🎉
+        </p>
+        <div class="success-stars-row">⭐ ⭐ ⭐ ⭐ ⭐</div>
+        <button class="btn-reset" id="resetBtn">続けてひょうかする</button>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="card-footer">つかめ！将来の星 ✦ 発表ひょうかフォーム</div>
+
+  </div><!-- /.card -->
+</div><!-- /.container -->
 
 <script>
-// ============================================================
-//  DATA
-// ============================================================
-let items = [];
-let drawnItems = [];
-let isDrawing = false;
+/* ================================================================
+   ★ Google Apps Script の URL をここに設定してください ★
 
-const presets = {
-  omikuji: ['大吉', '中吉', '小吉', '吉', '末吉', '凶', '大凶'],
-  janken: ['グー', 'チョキ', 'パー'],
-  lunch: ['ラーメン', 'カレー', '寿司', 'パスタ', '焼肉', 'うどん', 'ハンバーガー'],
-  penalty: ['モノマネ', '一発ギャグ', '腕立て10回', '変顔', 'おごり', '告白']
-};
+   例：'https://script.google.com/macros/s/xxxxxxxxx/exec'
+   ================================================================ */
+const GAS_URL = '';   /* ← ここに貼り付ける */
+/* ================================================================ */
 
-// ============================================================
-//  AUDIO (Web Audio API – simple synth)
-// ============================================================
-let audioCtx;
-function getAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
+/* ────────────────────────────────────────────
+   星評価の状態管理
+──────────────────────────────────────────── */
+const ratings = { clarity: 0, interesting: 0, passion: 0 };
 
-function playTick() {
-  const ctx = getAudio();
-  const o = ctx.createOscillator();
-  const g = ctx.createGain();
-  o.type = 'sine';
-  o.frequency.setValueAtTime(800 + Math.random() * 600, ctx.currentTime);
-  g.gain.setValueAtTime(0.08, ctx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-  o.connect(g); g.connect(ctx.destination);
-  o.start(); o.stop(ctx.currentTime + 0.08);
-}
+const RATING_LABELS = [
+  '', // 0 は未選択
+  '★　もう少し',
+  '★★　ふつう',
+  '★★★　よかった',
+  '★★★★　とてもよかった',
+  '★★★★★　さいこう！',
+];
 
-function playFanfare() {
-  const ctx = getAudio();
-  const notes = [523, 659, 784, 1047];
-  notes.forEach((f, i) => {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'triangle';
-    o.frequency.setValueAtTime(f, ctx.currentTime + i * 0.15);
-    g.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.15);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.5);
-    o.connect(g); g.connect(ctx.destination);
-    o.start(ctx.currentTime + i * 0.15);
-    o.stop(ctx.currentTime + i * 0.15 + 0.5);
-  });
-}
+/* 各 star-row を初期化 */
+document.querySelectorAll('.star-row').forEach(row => {
+  const key   = row.dataset.key;
+  const btns  = [...row.querySelectorAll('.star-btn')];
+  const label = document.getElementById(`lb-${key}`);
 
-function playDrumRoll() {
-  const ctx = getAudio();
-  for (let i = 0; i < 30; i++) {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'square';
-    o.frequency.setValueAtTime(100 + Math.random() * 50, ctx.currentTime + i * 0.05);
-    g.gain.setValueAtTime(0.04, ctx.currentTime + i * 0.05);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.05 + 0.05);
-    o.connect(g); g.connect(ctx.destination);
-    o.start(ctx.currentTime + i * 0.05);
-    o.stop(ctx.currentTime + i * 0.05 + 0.06);
-  }
-}
-
-// ============================================================
-//  STICK FIGURE DRAWING HELPERS
-// ============================================================
-function drawStickFigure(ctx, x, y, scale, pose, color = '#fff') {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, scale);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  // Head
-  ctx.beginPath();
-  ctx.arc(0, -50, 12, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Body
-  ctx.beginPath();
-  ctx.moveTo(0, -38);
-  ctx.lineTo(0, 0);
-  ctx.stroke();
-
-  switch (pose) {
-    case 'idle':
-      // Arms down
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(-20, -10); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(20, -10); ctx.stroke();
-      // Legs
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-15, 30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, 30); ctx.stroke();
-      // Face – neutral
-      drawFace(ctx, 'neutral');
-      break;
-
-    case 'excited':
-      // Arms up
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(-25, -55); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(25, -55); ctx.stroke();
-      // Legs apart
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-18, 28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(18, 28); ctx.stroke();
-      // Face – happy
-      drawFace(ctx, 'happy');
-      break;
-
-    case 'nervous': {
-      const t = Date.now() / 200;
-      const shake = Math.sin(t) * 3;
-      // Arms shaking
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(-18 + shake, -15); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(18 + shake, -15); ctx.stroke();
-      // Legs
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-12 + shake, 28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(12 - shake, 28); ctx.stroke();
-      // Face – nervous
-      drawFace(ctx, 'nervous');
-      break;
-    }
-
-    case 'jump': {
-      const jt = Date.now() / 300;
-      const jumpY = Math.abs(Math.sin(jt)) * 15;
-      ctx.translate(0, -jumpY);
-      // Arms way up
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(-28, -60); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(28, -60); ctx.stroke();
-      // Legs bent
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, 15); ctx.lineTo(-18, 28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(10, 15); ctx.lineTo(18, 28); ctx.stroke();
-      // Face – ecstatic
-      drawFace(ctx, 'ecstatic');
-      break;
-    }
-
-    case 'cry': {
-      // Arms droopy
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(-20, -5); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(20, -5); ctx.stroke();
-      // Legs together
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-8, 30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(8, 30); ctx.stroke();
-      // Head tilt
-      drawFace(ctx, 'sad');
-      // Tears
-      const tt = Date.now() / 400;
-      ctx.fillStyle = '#5bc0fa';
-      ctx.beginPath(); ctx.arc(-6, -42 + (tt % 1) * 10, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(6, -44 + ((tt + 0.5) % 1) * 10, 2, 0, Math.PI * 2); ctx.fill();
-      break;
-    }
-
-    case 'dance': {
-      const dt = Date.now() / 250;
-      const s = Math.sin(dt);
-      const c = Math.cos(dt);
-      // Arms waving
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(-25 * c, -45 + 10 * s); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(25 * c, -45 - 10 * s); ctx.stroke();
-      // Legs dancing
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-15 - 5 * s, 28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15 + 5 * s, 28); ctx.stroke();
-      drawFace(ctx, 'happy');
-      break;
-    }
-  }
-
-  ctx.restore();
-}
-
-function drawFace(ctx, expression) {
-  ctx.fillStyle = ctx.strokeStyle;
-  switch (expression) {
-    case 'neutral':
-      ctx.fillRect(-5, -53, 3, 3);
-      ctx.fillRect(3, -53, 3, 3);
-      ctx.beginPath(); ctx.moveTo(-4, -44); ctx.lineTo(4, -44); ctx.stroke();
-      break;
-    case 'happy':
-      ctx.fillRect(-5, -53, 3, 3);
-      ctx.fillRect(3, -53, 3, 3);
-      ctx.beginPath(); ctx.arc(0, -48, 5, 0.1, Math.PI - 0.1); ctx.stroke();
-      break;
-    case 'ecstatic':
-      // Star eyes
-      drawStar(ctx, -4, -52, 3, 5);
-      drawStar(ctx, 4, -52, 3, 5);
-      ctx.beginPath(); ctx.arc(0, -47, 6, 0, Math.PI); ctx.fill();
-      break;
-    case 'nervous':
-      ctx.fillRect(-5, -54, 3, 4);
-      ctx.fillRect(3, -54, 3, 4);
-      ctx.beginPath();
-      ctx.moveTo(-5, -43);
-      ctx.lineTo(-2, -45);
-      ctx.lineTo(2, -43);
-      ctx.lineTo(5, -45);
-      ctx.stroke();
-      break;
-    case 'sad':
-      ctx.fillRect(-5, -53, 3, 3);
-      ctx.fillRect(3, -53, 3, 3);
-      ctx.beginPath(); ctx.arc(0, -41, 5, Math.PI + 0.1, -0.1); ctx.stroke();
-      break;
-  }
-}
-
-function drawStar(ctx, cx, cy, r, points) {
-  ctx.beginPath();
-  for (let i = 0; i < points * 2; i++) {
-    const radius = i % 2 === 0 ? r : r * 0.4;
-    const angle = (i * Math.PI) / points - Math.PI / 2;
-    const x = cx + Math.cos(angle) * radius;
-    const y = cy + Math.sin(angle) * radius;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
-// ============================================================
-//  LOTTERY BOX DRAWING
-// ============================================================
-function drawLotteryBox(ctx, x, y, shaking) {
-  ctx.save();
-  ctx.translate(x, y);
-  if (shaking) {
-    ctx.translate(Math.random() * 6 - 3, Math.random() * 4 - 2);
-    ctx.rotate((Math.random() - 0.5) * 0.05);
-  }
-
-  // Box body
-  const grad = ctx.createLinearGradient(-40, -50, 40, 50);
-  grad.addColorStop(0, '#c0392b');
-  grad.addColorStop(1, '#e74c3c');
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.roundRect(-40, -20, 80, 70, 6);
-  ctx.fill();
-
-  // Box top / opening
-  ctx.fillStyle = '#922b21';
-  ctx.fillRect(-45, -25, 90, 12);
-
-  // Hole on top
-  ctx.fillStyle = '#1a1a40';
-  ctx.beginPath();
-  ctx.ellipse(0, -19, 15, 6, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Label
-  ctx.fillStyle = '#ffd700';
-  ctx.font = 'bold 16px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('福', 0, 25);
-
-  // Decorative lines
-  ctx.strokeStyle = '#ffd700';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(-35, -15, 70, 58);
-
-  ctx.restore();
-}
-
-// ============================================================
-//  SLOT-STYLE TEXT ROLLER
-// ============================================================
-let rollerItems = [];
-let rollerIndex = 0;
-let rollerSpeed = 0;
-let rollerResult = '';
-
-function drawRoller(ctx, x, y, w, h) {
-  if (rollerItems.length === 0) return;
-
-  ctx.save();
-  ctx.translate(x, y);
-
-  // Background
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.beginPath();
-  ctx.roundRect(-w / 2, -h / 2, w, h, 10);
-  ctx.fill();
-
-  // Border glow
-  ctx.strokeStyle = isDrawing ? '#ffd200' : 'rgba(255,210,0,0.3)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(-w / 2, -h / 2, w, h, 10);
-  ctx.stroke();
-
-  // Text
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 28px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  const idx = Math.floor(rollerIndex) % rollerItems.length;
-  const currentText = rollerItems[idx];
-  ctx.fillText(currentText, 0, 0);
-
-  // Side texts (faded)
-  ctx.globalAlpha = 0.3;
-  ctx.font = 'bold 18px sans-serif';
-  const prevIdx = (idx - 1 + rollerItems.length) % rollerItems.length;
-  const nextIdx = (idx + 1) % rollerItems.length;
-  ctx.fillText(rollerItems[prevIdx], 0, -30);
-  ctx.fillText(rollerItems[nextIdx], 0, 30);
-
-  ctx.restore();
-}
-
-// ============================================================
-//  SPARKLE / PARTICLE SYSTEM
-// ============================================================
-let sparkles = [];
-
-function addSparkles(x, y, count, canvas) {
-  for (let i = 0; i < count; i++) {
-    sparkles.push({
-      x, y,
-      vx: (Math.random() - 0.5) * 6,
-      vy: (Math.random() - 0.5) * 6 - 2,
-      life: 1,
-      decay: 0.01 + Math.random() * 0.02,
-      color: `hsl(${Math.random() * 60 + 30}, 100%, 60%)`,
-      size: 2 + Math.random() * 4,
-      canvas
+  /* クリック */
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      ratings[key] = parseInt(btn.dataset.val, 10);
+      renderStars(btns, ratings[key]);
+      if (label) label.textContent = RATING_LABELS[ratings[key]] || '';
     });
-  }
-}
-
-function updateSparkles(ctx) {
-  sparkles = sparkles.filter(s => s.life > 0);
-  sparkles.forEach(s => {
-    s.x += s.vx;
-    s.y += s.vy;
-    s.vy += 0.1;
-    s.life -= s.decay;
-    ctx.globalAlpha = s.life;
-    ctx.fillStyle = s.color;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.globalAlpha = 1;
-}
-
-// ============================================================
-//  FIREWORKS
-// ============================================================
-let fireworks = [];
-let fwParticles = [];
-
-function launchFireworks(count) {
-  const fwCanvas = document.getElementById('fwCanvas');
-  for (let i = 0; i < count; i++) {
-    setTimeout(() => {
-      fireworks.push({
-        x: Math.random() * fwCanvas.width,
-        y: fwCanvas.height,
-        targetY: Math.random() * fwCanvas.height * 0.4 + 50,
-        speed: 6 + Math.random() * 4,
-        hue: Math.random() * 360
-      });
-    }, i * 300);
-  }
-}
-
-function updateFireworks(ctx, canvas) {
-  fireworks = fireworks.filter(fw => {
-    fw.y -= fw.speed;
-    // Trail
-    ctx.fillStyle = `hsla(${fw.hue}, 100%, 70%, 0.8)`;
-    ctx.beginPath();
-    ctx.arc(fw.x, fw.y, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (fw.y <= fw.targetY) {
-      // Explode
-      for (let i = 0; i < 60; i++) {
-        const angle = (Math.PI * 2 * i) / 60;
-        const speed = 2 + Math.random() * 4;
-        fwParticles.push({
-          x: fw.x, y: fw.y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          life: 1,
-          decay: 0.01 + Math.random() * 0.015,
-          hue: fw.hue + Math.random() * 40 - 20,
-          size: 2 + Math.random() * 2
-        });
-      }
-      return false;
-    }
-    return true;
   });
 
-  fwParticles = fwParticles.filter(p => {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.05;
-    p.life -= p.decay;
-    ctx.globalAlpha = p.life;
-    ctx.fillStyle = `hsla(${p.hue}, 100%, 65%, 1)`;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-    return p.life > 0;
+  /* マウスオーバー（PC） */
+  btns.forEach(btn => {
+    btn.addEventListener('mouseenter', () => renderStars(btns, parseInt(btn.dataset.val, 10), true));
+    btn.addEventListener('mouseleave', () => renderStars(btns, ratings[key]));
   });
-  ctx.globalAlpha = 1;
-}
-
-// ============================================================
-//  MAIN CANVAS ANIMATION
-// ============================================================
-const stageCanvas = document.getElementById('stageCanvas');
-const sCtx = stageCanvas.getContext('2d');
-const fwCanvas = document.getElementById('fwCanvas');
-const fwCtx = fwCanvas.getContext('2d');
-
-let stickPose = 'idle';
-let stickColor = '#fff';
-let bgStars = [];
-
-function resizeCanvases() {
-  const rect = stageCanvas.getBoundingClientRect();
-  stageCanvas.width = rect.width * devicePixelRatio;
-  stageCanvas.height = rect.height * devicePixelRatio;
-  sCtx.scale(devicePixelRatio, devicePixelRatio);
-
-  fwCanvas.width = window.innerWidth * devicePixelRatio;
-  fwCanvas.height = window.innerHeight * devicePixelRatio;
-  fwCtx.scale(devicePixelRatio, devicePixelRatio);
-
-  // Generate background stars
-  bgStars = [];
-  for (let i = 0; i < 50; i++) {
-    bgStars.push({
-      x: Math.random() * rect.width,
-      y: Math.random() * rect.height,
-      size: Math.random() * 2 + 0.5,
-      speed: Math.random() * 0.005 + 0.002
-    });
-  }
-}
-resizeCanvases();
-window.addEventListener('resize', resizeCanvases);
-
-function stageWidth() { return stageCanvas.width / devicePixelRatio; }
-function stageHeight() { return stageCanvas.height / devicePixelRatio; }
-
-// Crowd of small stick figures
-function drawCrowd(ctx) {
-  const count = Math.min(items.length, 8);
-  const spacing = stageWidth() / (count + 1);
-  const colors = ['#5bc0fa', '#43e97b', '#f7971e', '#eb3349', '#a78bfa', '#f472b6', '#facc15', '#34d399'];
-
-  for (let i = 0; i < count; i++) {
-    const cx = spacing * (i + 1);
-    const cy = stageHeight() - 50;
-    const pose = isDrawing ? 'nervous' : (drawnItems.length > 0 ? 'dance' : 'idle');
-    drawStickFigure(ctx, cx, cy, 0.55, pose, colors[i % colors.length]);
-
-    // Name tag
-    ctx.fillStyle = colors[i % colors.length];
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(items[i], cx, stageHeight() - 10);
-  }
-}
-
-let frameCount = 0;
-
-function renderStage() {
-  const w = stageWidth();
-  const h = stageHeight();
-  sCtx.clearRect(0, 0, w, h);
-
-  // Stars
-  bgStars.forEach(star => {
-    const twinkle = Math.sin(frameCount * star.speed) * 0.5 + 0.5;
-    sCtx.globalAlpha = twinkle;
-    sCtx.fillStyle = '#fff';
-    sCtx.beginPath();
-    sCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-    sCtx.fill();
-  });
-  sCtx.globalAlpha = 1;
-
-  // Floor line
-  sCtx.strokeStyle = 'rgba(255,255,255,0.1)';
-  sCtx.lineWidth = 1;
-  sCtx.beginPath();
-  sCtx.moveTo(20, h - 25);
-  sCtx.lineTo(w - 20, h - 25);
-  sCtx.stroke();
-
-  // Spotlight
-  if (isDrawing) {
-    const spotGrad = sCtx.createRadialGradient(w / 2, h / 2 - 40, 10, w / 2, h / 2 - 40, 120);
-    spotGrad.addColorStop(0, 'rgba(255, 210, 0, 0.1)');
-    spotGrad.addColorStop(1, 'rgba(255, 210, 0, 0)');
-    sCtx.fillStyle = spotGrad;
-    sCtx.fillRect(0, 0, w, h);
-  }
-
-  // Main stick figure
-  const mainX = w / 2;
-  const mainY = h / 2 + 20;
-  drawStickFigure(sCtx, mainX - 90, mainY, 1.0, stickPose, stickColor);
-
-  // Lottery box
-  drawLotteryBox(sCtx, mainX + 60, mainY + 10, isDrawing);
-
-  // Roller
-  drawRoller(sCtx, mainX + 60, mainY - 60, 160, 70);
-
-  // Crowd
-  if (items.length > 0) {
-    drawCrowd(sCtx);
-  }
-
-  // Sparkles
-  updateSparkles(sCtx);
-
-  // Instruction text if no items
-  if (items.length === 0 && drawnItems.length === 0) {
-    sCtx.fillStyle = 'rgba(255,255,255,0.3)';
-    sCtx.font = '16px sans-serif';
-    sCtx.textAlign = 'center';
-    sCtx.fillText('下のプリセットまたは入力欄からアイテムを追加しよう!', w / 2, h - 8);
-  }
-
-  frameCount++;
-  requestAnimationFrame(renderStage);
-}
-
-function renderFireworks() {
-  fwCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-  updateFireworks(fwCtx, fwCanvas);
-  requestAnimationFrame(renderFireworks);
-}
-
-renderStage();
-renderFireworks();
-
-// ============================================================
-//  ITEM MANAGEMENT
-// ============================================================
-function addItem(text) {
-  const input = document.getElementById('itemInput');
-  const val = text || input.value.trim();
-  if (!val) return;
-  if (items.length >= 20) return;
-  items.push(val);
-  if (!text) input.value = '';
-  updateUI();
-}
-
-document.getElementById('itemInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addItem();
 });
 
-function removeItem(idx) {
-  items.splice(idx, 1);
-  updateUI();
-}
-
-function resetAll() {
-  items = [];
-  drawnItems = [];
-  rollerItems = [];
-  stickPose = 'idle';
-  stickColor = '#fff';
-  updateUI();
-}
-
-function loadPreset(name) {
-  items = [...presets[name]];
-  drawnItems = [];
-  stickPose = 'idle';
-  stickColor = '#fff';
-  updateUI();
-}
-
-function updateUI() {
-  const bar = document.getElementById('itemsBar');
-  const available = items.filter(it => !drawnItems.includes(it));
-  bar.innerHTML = items.map((it, i) => {
-    const drawn = drawnItems.includes(it);
-    return `<span class="item-chip ${drawn ? 'drawn' : ''}">
-      ${it}
-      ${!drawn ? `<span class="remove" onclick="removeItem(${i})">&times;</span>` : ''}
-    </span>`;
-  }).join('');
-
-  const drawBtn = document.getElementById('drawBtn');
-  drawBtn.disabled = available.length === 0 || isDrawing;
-
-  // Update roller items
-  rollerItems = available.length > 0 ? available : items;
-}
-
-// ============================================================
-//  LOTTERY DRAW
-// ============================================================
-async function startDraw() {
-  if (isDrawing) return;
-  const available = items.filter(it => !drawnItems.includes(it));
-  if (available.length === 0) return;
-
-  isDrawing = true;
-  stickPose = 'nervous';
-  stickColor = '#facc15';
-  document.getElementById('drawBtn').disabled = true;
-
-  rollerItems = [...available];
-  rollerSpeed = 15;
-  rollerIndex = 0;
-
-  playDrumRoll();
-
-  // Phase 1: Fast spin
-  const result = available[Math.floor(Math.random() * available.length)];
-
-  await animateRoller(1500, 15);
-
-  // Phase 2: Slow down
-  stickPose = 'excited';
-  await animateRoller(1500, 2, result);
-
-  // Phase 3: Stop on result
-  const resultIdx = rollerItems.indexOf(result);
-  rollerIndex = resultIdx;
-  rollerResult = result;
-
-  // Reveal!
-  drawnItems.push(result);
-  isDrawing = false;
-  stickPose = 'jump';
-  stickColor = '#43e97b';
-
-  playFanfare();
-  showResult(result);
-  addSparkles(stageWidth() / 2, stageHeight() / 2, 40, stageCanvas);
-  launchFireworks(8);
-
-  updateUI();
-}
-
-function animateRoller(duration, speed, target) {
-  return new Promise(resolve => {
-    const startTime = Date.now();
-    const startIdx = rollerIndex;
-
-    function tick() {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-
-      if (target && progress > 0.7) {
-        // Approach target
-        const targetIdx = rollerItems.indexOf(target);
-        rollerIndex = targetIdx + (1 - progress) * 3;
-      } else {
-        rollerIndex = startIdx + elapsed * speed * 0.01;
-      }
-
-      if (Math.floor(rollerIndex) !== Math.floor(rollerIndex - 0.3)) {
-        playTick();
-      }
-
-      if (progress < 1) {
-        requestAnimationFrame(tick);
-      } else {
-        resolve();
-      }
-    }
-    tick();
+function renderStars(btns, value, isPreview = false) {
+  btns.forEach(btn => {
+    const v = parseInt(btn.dataset.val, 10);
+    btn.classList.toggle('lit',     !isPreview && v <= value);
+    btn.classList.toggle('preview',  isPreview && v <= value);
+    if (!isPreview) btn.classList.remove('preview');
   });
 }
 
-// ============================================================
-//  RESULT DISPLAY
-// ============================================================
-function showResult(text) {
-  document.getElementById('resultText').textContent = text;
-  document.getElementById('resultOverlay').classList.add('show');
+/* ────────────────────────────────────────────
+   画面切り替え
+──────────────────────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
-  // Draw celebrating stick figure on mini canvas
-  const mc = document.getElementById('miniStickCanvas');
-  const mctx = mc.getContext('2d');
+/* ────────────────────────────────────────────
+   バリデーション
+──────────────────────────────────────────── */
+function validate() {
+  let ok = true;
 
-  let celebFrame = 0;
-  function animCeleb() {
-    mctx.clearRect(0, 0, mc.width, mc.height);
-    drawStickFigure(mctx, mc.width / 2, mc.height / 2 + 30, 1.2, 'jump', '#ffd200');
+  const fields = [
+    { id: 'reviewerName',  errId: 'errReviewer'  },
+    { id: 'presenterName', errId: 'errPresenter'  },
+  ];
 
-    // Confetti
-    for (let i = 0; i < 3; i++) {
-      mctx.fillStyle = `hsl(${Math.random() * 360}, 80%, 60%)`;
-      mctx.fillRect(
-        Math.random() * mc.width,
-        Math.random() * mc.height,
-        4 + Math.random() * 4,
-        4 + Math.random() * 4
-      );
+  fields.forEach(f => {
+    const el  = document.getElementById(f.id);
+    const err = document.getElementById(f.errId);
+    const empty = !el.value.trim();
+    el.classList.toggle('is-invalid', empty);
+    err.classList.toggle('active', empty);
+    if (empty) ok = false;
+  });
+
+  return ok;
+}
+
+/* ────────────────────────────────────────────
+   フォーム送信
+──────────────────────────────────────────── */
+document.getElementById('feedbackForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  document.getElementById('errorBanner').classList.remove('active');
+
+  if (!validate()) {
+    /* バリデーション失敗：シェイクアニメーション */
+    const form = document.getElementById('feedbackForm');
+    form.classList.remove('shake');
+    void form.offsetWidth;  /* reflow でリセット */
+    form.classList.add('shake');
+    return;
+  }
+
+  const payload = {
+    reviewerName:  document.getElementById('reviewerName').value.trim(),
+    presenterName: document.getElementById('presenterName').value.trim(),
+    clarity:       ratings.clarity,
+    interesting:   ratings.interesting,
+    passion:       ratings.passion,
+    comment:       document.getElementById('comment').value.trim(),
+    timestamp:     new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+  };
+
+  showScreen('screenLoading');
+
+  /* GAS URL が未設定のときはテストモード */
+  if (!GAS_URL) {
+    await sleep(1000);
+    console.log('[テストモード] 送信データ:', payload);
+    showScreen('screenSuccess');
+    return;
+  }
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showScreen('screenSuccess');
+  } catch (err) {
+    console.error('送信エラー:', err);
+    showScreen('screenForm');
+    document.getElementById('errorBanner').classList.add('active');
+  }
+});
+
+/* ────────────────────────────────────────────
+   リセット
+──────────────────────────────────────────── */
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('feedbackForm').reset();
+  document.getElementById('errorBanner').classList.remove('active');
+
+  /* 星をリセット */
+  Object.keys(ratings).forEach(key => { ratings[key] = 0; });
+  document.querySelectorAll('.star-row').forEach(row => {
+    const btns = [...row.querySelectorAll('.star-btn')];
+    renderStars(btns, 0);
+    const label = document.getElementById(`lb-${row.dataset.key}`);
+    if (label) label.textContent = '';
+  });
+
+  /* バリデーションリセット */
+  document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+  document.querySelectorAll('.field-error.active').forEach(el => el.classList.remove('active'));
+
+  showScreen('screenForm');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ────────────────────────────────────────────
+   星空生成
+──────────────────────────────────────────── */
+(function createStars() {
+  const bg = document.getElementById('starsBg');
+  for (let i = 0; i < 140; i++) {
+    const el  = document.createElement('div');
+    el.className = 'star-dot';
+    const size = Math.random() * 2.4 + 0.5;
+    el.style.cssText = [
+      `width:${size}px`,
+      `height:${size}px`,
+      `left:${Math.random() * 100}%`,
+      `top:${Math.random() * 100}%`,
+      `animation-duration:${(Math.random() * 3 + 1.5).toFixed(1)}s`,
+      `animation-delay:${(Math.random() * 4).toFixed(1)}s`,
+      `opacity:${(Math.random() * 0.6 + 0.3).toFixed(2)}`,
+    ].join(';');
+    bg.appendChild(el);
+  }
+})();
+
+/* ────────────────────────────────────────────
+   ユーティリティ
+──────────────────────────────────────────── */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+</script>
+
+<!--
+  ================================================================
+  ★★★  Google Apps Script のコード  ★★★
+
+  以下を Google Apps Script エディタに貼り付けて保存・デプロイしてください。
+
+  ================================================================
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getActiveSheet();
+
+    // 1 行目にヘッダーがなければ追加
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        'タイムスタンプ',
+        'ひょうかした人',
+        '発表した人',
+        'わかりやすさ（1〜5）',
+        'おもしろさ（1〜5）',
+        'きもちがつたわった（1〜5）',
+        '応援コメント'
+      ]);
+
+      // ヘッダー行の書式設定
+      var headerRange = sheet.getRange(1, 1, 1, 7);
+      headerRange.setBackground('#2d0d6e');
+      headerRange.setFontColor('#FFD700');
+      headerRange.setFontWeight('bold');
+      headerRange.setHorizontalAlignment('center');
+      sheet.setFrozenRows(1);
+      sheet.setColumnWidth(1, 160);
+      sheet.setColumnWidth(2, 130);
+      sheet.setColumnWidth(3, 130);
+      sheet.setColumnWidth(4, 120);
+      sheet.setColumnWidth(5, 120);
+      sheet.setColumnWidth(6, 150);
+      sheet.setColumnWidth(7, 280);
     }
 
-    celebFrame++;
-    if (celebFrame < 300) requestAnimationFrame(animCeleb);
+    // データを追記
+    sheet.appendRow([
+      data.timestamp     || new Date().toLocaleString('ja-JP'),
+      data.reviewerName  || '',
+      data.presenterName || '',
+      data.clarity       || 0,
+      data.interesting   || 0,
+      data.passion       || 0,
+      data.comment       || ''
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'success' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
-  animCeleb();
 }
 
-function closeResult() {
-  document.getElementById('resultOverlay').classList.remove('show');
-  stickPose = items.filter(it => !drawnItems.includes(it)).length > 0 ? 'dance' : 'idle';
-  stickColor = '#fff';
-}
+  ================================================================
+-->
 
-// ============================================================
-//  INIT
-// ============================================================
-updateUI();
-</script>
 </body>
 </html>
