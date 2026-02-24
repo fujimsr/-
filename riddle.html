@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎉 なぞなぞランド 🎉</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 25%, #ffecd2 50%, #a1c4fd 75%, #c2e9fb 100%);
+      background-size: 400% 400%;
+      animation: bgShift 8s ease infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 40px;
+      overflow-x: hidden;
+    }
+
+    @keyframes bgShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ===== ヘッダー ===== */
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .site-title {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow:
+        3px 3px 0 #ff6b6b,
+        6px 6px 0 rgba(0,0,0,0.15);
+      letter-spacing: 4px;
+      animation: titleBounce 2s ease-in-out infinite;
+    }
+
+    @keyframes titleBounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    .site-subtitle {
+      font-size: clamp(0.85rem, 3vw, 1.1rem);
+      color: rgba(255,255,255,0.9);
+      margin-top: 6px;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* ===== マスコット ===== */
+    .mascot-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .mascot {
+      font-size: 4rem;
+      animation: mascotWiggle 1.5s ease-in-out infinite;
+      transform-origin: bottom center;
+      cursor: default;
+      user-select: none;
+    }
+
+    @keyframes mascotWiggle {
+      0%, 100% { transform: rotate(-5deg); }
+      50%       { transform: rotate(5deg); }
+    }
+
+    /* ===== カテゴリフィルター ===== */
+    .category-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .cat-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: rgba(255,255,255,0.55);
+      color: #555;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .cat-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    }
+
+    .cat-btn.active {
+      background: #fff;
+      color: #ff6b6b;
+      box-shadow: 0 4px 14px rgba(255,107,107,0.4);
+      transform: translateY(-2px);
+    }
+
+    /* ===== 進捗 ===== */
+    .progress-wrap {
+      width: 100%;
+      max-width: 540px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .progress-text {
+      font-size: 1rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.95);
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,0.35);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    /* ===== カード ===== */
+    .card-scene {
+      width: 100%;
+      max-width: 540px;
+      perspective: 900px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      width: 100%;
+      min-height: 260px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: default;
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      min-height: 260px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 28px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    }
+
+    /* 問題面（表） */
+    .card-front {
+      background: linear-gradient(135deg, #ffffff, #f0f4ff);
+      border: 3px solid rgba(255,255,255,0.8);
+    }
+
+    .card-front .card-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #aaa;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .question-text {
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
+      font-weight: 700;
+      color: #333;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .category-badge {
+      margin-top: 20px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      color: #fff;
+    }
+
+    /* 答え面（裏） */
+    .card-back {
+      background: linear-gradient(135deg, #ffd93d, #ff6b6b);
+      transform: rotateY(180deg);
+      border: 3px solid rgba(255,255,255,0.5);
+    }
+
+    .card-back .card-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 16px;
+    }
+
+    .answer-text {
+      font-size: clamp(1.5rem, 6vw, 2.4rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .answer-hint {
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.85);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ===== ボタン類 ===== */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 540px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      flex: 1 1 140px;
+      max-width: 200px;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.18s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      letter-spacing: 1px;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+    }
+
+    .btn:active:not(:disabled) { transform: translateY(0); }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-answer {
+      background: linear-gradient(135deg, #ff6b6b, #ee0979);
+      color: #fff;
+    }
+
+    .btn-next {
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+      color: #fff;
+    }
+
+    .btn-shuffle {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      flex: 1 1 120px;
+      max-width: 160px;
+      font-size: 0.9rem;
+    }
+
+    /* ===== 完了オーバーレイ ===== */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-box {
+      background: #fff;
+      border-radius: 28px;
+      padding: 40px 36px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.6); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .overlay-emoji { font-size: 4rem; margin-bottom: 12px; }
+    .overlay-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #ff6b6b;
+      margin-bottom: 8px;
+    }
+    .overlay-msg {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .btn-restart {
+      background: linear-gradient(135deg, #ff6b6b, #ee0979);
+      color: #fff;
+      padding: 14px 36px;
+      border: none;
+      border-radius: 999px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255,107,107,0.4);
+      transition: all 0.2s;
+    }
+    .btn-restart:hover { transform: translateY(-3px); }
+
+    /* ===== 紙吹雪 Canvas ===== */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    /* ===== サウンドトグル ===== */
+    .sound-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: rgba(255,255,255,0.7);
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      backdrop-filter: blur(4px);
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .sound-toggle:hover { transform: scale(1.1); }
+
+    /* ===== レスポンシブ ===== */
+    @media (max-width: 400px) {
+      .btn { font-size: 0.9rem; padding: 12px 14px; }
+      .card-face { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<button class="sound-toggle" id="soundToggle" title="サウンドON/OFF">🔊</button>
+
+<header>
+  <div class="mascot-wrap">
+    <div class="mascot" id="mascot">🦊</div>
+  </div>
+  <div class="site-title">なぞなぞランド</div>
+  <div class="site-subtitle">さあ、なぞなぞにちょうせんしよう！</div>
+</header>
+
+<!-- カテゴリ選択 -->
+<div class="category-bar" id="categoryBar"></div>
+
+<!-- 進捗 -->
+<div class="progress-wrap">
+  <div class="progress-text" id="progressText">1 / 30 問</div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- なぞなぞカード -->
+<div class="card-scene">
+  <div class="card" id="card">
+    <div class="card-face card-front">
+      <div class="card-label">もんだい</div>
+      <div class="question-text" id="questionText">ロード中…</div>
+      <div class="category-badge" id="categoryBadge"></div>
+    </div>
+    <div class="card-face card-back">
+      <div class="card-label">こたえ</div>
+      <div class="answer-text" id="answerText"></div>
+      <div class="answer-hint" id="answerHint"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ボタン -->
+<div class="btn-row">
+  <button class="btn btn-answer" id="btnAnswer" onclick="showAnswer()">💡 答えを見る</button>
+  <button class="btn btn-next"   id="btnNext"   onclick="nextRiddle()" disabled>➡️ 次のなぞなぞ</button>
+</div>
+<div class="btn-row">
+  <button class="btn btn-shuffle" onclick="shuffle()">🔀 シャッフル</button>
+</div>
+
+<!-- 完了オーバーレイ -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <div class="overlay-emoji">🎊</div>
+    <div class="overlay-title">ぜんもんクリア！</div>
+    <div class="overlay-msg" id="overlayMsg">すごい！全部のなぞなぞに<br>挑戦したよ！</div>
+    <button class="btn-restart" onclick="restart()">もう一回あそぶ</button>
+  </div>
+</div>
+
+<script>
+// ===== なぞなぞデータ =====
+const ALL_RIDDLES = [
+  // 🐾 動物
+  { q: 'カバのカバンの中に入っている動物はなーんだ？', a: 'カバ', hint: '「カバン」の中に「カバ」が！', cat: '動物' },
+  { q: 'ライオンがいつも食べているケーキってなーんだ？', a: 'タテガミケーキ', hint: '「タテガミ」→「たてがみケーキ」… いえいえ、ライオンだから「ケーキのライ」→ ライオンのライ！ 答えは「ライ麦ケーキ」！', cat: '動物' },
+  { q: 'サルが木から落ちたとき、最初に言う言葉はなーんだ？', a: 'いた！（木から「いた」！）', hint: '木から落ちたから「痛い＝いた！」', cat: '動物' },
+  { q: '犬を4匹つないだら何になる？', a: '犬（いぬ）が4匹 → 「ワンワンワンワン」！', hint: '犬の鳴き声を4つつなげると…', cat: '動物' },
+  { q: 'ネコが大好きなお菓子ってなーんだ？', a: 'ネコ焼き（猫の形のたい焼き）', hint: 'にゃーんと美味しい！', cat: '動物' },
+  { q: 'カエルが落ちるとき言う言葉はなーんだ？', a: 'ゲコッ！（ゲコ＝下に行くから）', hint: '「下（ゲ）」に「行（コ）」で……', cat: '動物' },
+  { q: 'ウサギが一番好きなスポーツはなーんだ？', a: 'ぴょんぴょん大会（跳び箱）', hint: 'ぴょんぴょん跳ねるから！', cat: '動物' },
+
+  // 🍎 食べ物
+  { q: 'パンはパンでも食べられないパンってなーんだ？', a: 'フライパン', hint: '料理で使うアレです！', cat: '食べ物' },
+  { q: 'ケーキはケーキでも食べられないケーキってなーんだ？', a: 'スポンジ（スポンジケーキ）', hint: 'お風呂で使うものにもなるよ！', cat: '食べ物' },
+  { q: 'カレーを食べると体のどこが辛くなる？', a: 'おなか（辛さで）でも…「くち（口）」！', hint: '最初に触れるのはどこかな？', cat: '食べ物' },
+  { q: '切っても切ってもなくならない食べ物ってなーんだ？', a: 'トランプ（カード）のハートでなく、「かるた」でもなく…「おにぎり」！', hint: '握ればいくらでも作れる！', cat: '食べ物' },
+  { q: 'お寿司屋さんで一番長いネタってなーんだ？', a: '「まぐろ」→「ながとろ」？ いや「うなぎ」！', hint: '細長い魚です！', cat: '食べ物' },
+  { q: 'さかなを食べると頭がよくなるって言うけど、魚の中で一番頭がいい魚はなーんだ？', a: 'ブリ（「ブリ」リアント＝brilliant！）', hint: '賢い英語の言葉に似てるよ！', cat: '食べ物' },
+  { q: '逆から読んでも同じ食べ物ってなーんだ？', a: 'タケノコ…ではなく「トマト」！', hint: '「と・ま・と」をさかさまに読んでみて！', cat: '食べ物' },
+
+  // 🚗 乗り物
+  { q: '乗り物の中で一番数学が得意なのってなーんだ？', a: 'バス（「バス」＝ base、算数の「バス」！）', hint: 'みんなが乗る身近な乗り物です！', cat: '乗り物' },
+  { q: '走ると横になる乗り物ってなーんだ？', a: '自転車（タイヤが横を向いて走る！）', hint: 'ペダルをこいで進みます！', cat: '乗り物' },
+  { q: '空を飛ぶけど羽がない乗り物ってなーんだ？', a: 'ロケット', hint: '宇宙にも行けます！', cat: '乗り物' },
+  { q: 'どこへ行っても自分の家を持っている乗り物ってなーんだ？', a: 'キャンピングカー', hint: '旅しながら寝られます！', cat: '乗り物' },
+  { q: '水の上も走れる車ってなーんだ？', a: 'ホバークラフト', hint: '空気でぷかぷか浮くよ！', cat: '乗り物' },
+
+  // 🌸 自然
+  { q: '春夏秋冬の中で、一番短い季節はなーんだ？', a: '春（「は・る」2文字！）', hint: '文字の数を数えてみて！', cat: '自然' },
+  { q: '木に「木」が3つついたら何になる？', a: '森（もり）', hint: '漢字のクイズです！', cat: '自然' },
+  { q: '雨が降ってもぬれない木ってなーんだ？', a: '雨宿りできる大きな木（かさ木）？ ふふ「木」＋「雨」＝「梅（うめ）」！', hint: '春に咲く白いお花の木！', cat: '自然' },
+  { q: '上から読んでも下から読んでも同じ山の名前ってなーんだ？', a: 'フジ山（ふじ）→ さかさまは「じふ」…ではなく「たかた山」！', hint: '実は日本語で「たかた」という山もあるよ！でも一番有名なのは「たけし」でも「やまやま」！', cat: '自然' },
+  { q: '太陽が出ているのに濡れる場所ってなーんだ？', a: '噴水のそば', hint: '公園によくあります！', cat: '自然' },
+  { q: '冬にしか咲かない花ってなーんだ？', a: '雪の花（雪の結晶）', hint: '空から降ってくるよ！', cat: '自然' },
+
+  // 👕 日常生活
+  { q: '毎日使うのに自分では使えない道具ってなーんだ？', a: '棺桶（かんおけ）？いえ「鏡（かがみ）」！', hint: '自分の顔を見るために使うよ！', cat: '日常生活' },
+  { q: 'いつも頭の上にあるのに見えないものってなーんだ？', a: '髪の毛（かみのけ）', hint: '美容室で切ってもらうものだよ！', cat: '日常生活' },
+  { q: '踏まれるほどきれいになるものってなーんだ？', a: '道（みち）', hint: '人が歩けば歩くほど整ってくるよ！', cat: '日常生活' },
+  { q: '開けるほど光が入らなくなるものってなーんだ？', a: '傘（かさ）', hint: '雨の日に使います！', cat: '日常生活' },
+  { q: '手が10本あるものってなーんだ？', a: '手袋5組（ごくみ）', hint: '手を入れるものです！', cat: '日常生活' },
+
+  // 🔤 言葉遊び
+  { q: '「東京」から「東」を取ったら何になる？', a: '京（みやこ）', hint: '漢字1文字になるよ！', cat: '言葉遊び' },
+  { q: '「あいうえお」の中で一番太っているのはどれ？', a: '「う」（「うし（牛）」の「う」！）', hint: '動物の名前で考えてみて！', cat: '言葉遊び' },
+  { q: '「学校」にあって「お家」にないものってなーんだ？', a: '先生（せんせい）', hint: '授業を教えてくれる人だよ！', cat: '言葉遊び' },
+  { q: '「あかさたな」の中で一番力持ちはどれ？', a: '「た」（「たいりょく（体力）」の「た」！）', hint: '体を動かす言葉に含まれてるよ！', cat: '言葉遊び' },
+  { q: '「にじ（虹）」に「ん」を足すと何になる？', a: 'にじん（滲む）', hint: '水に濡れたとき起きる現象だよ！', cat: '言葉遊び' },
+  { q: 'ひらがなで書くと一番長い食べ物ってなーんだ？', a: 'アイスクリーム（「あいすくりーむ」7文字！）', hint: '夏に食べたい冷たいスイーツ！', cat: '言葉遊び' },
+];
+
+// ===== State =====
+let filtered   = [];
+let currentIdx = 0;
+let answered   = false;
+let soundOn    = true;
+let currentCat = 'すべて';
+
+const CATEGORIES = ['すべて', '動物', '食べ物', '乗り物', '自然', '日常生活', '言葉遊び'];
+const CAT_ICONS  = { 'すべて': '🌟', '動物': '🐾', '食べ物': '🍎', '乗り物': '🚗', '自然': '🌸', '日常生活': '👕', '言葉遊び': '🔤' };
+
+// ===== 初期化 =====
+function init() {
+  buildCategoryBar();
+  applyCategory('すべて');
+}
+
+function buildCategoryBar() {
+  const bar = document.getElementById('categoryBar');
+  bar.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (cat === currentCat ? ' active' : '');
+    btn.textContent = CAT_ICONS[cat] + ' ' + cat;
+    btn.onclick = () => applyCategory(cat);
+    bar.appendChild(btn);
+  });
+}
+
+function applyCategory(cat) {
+  currentCat = cat;
+  filtered = cat === 'すべて'
+    ? [...ALL_RIDDLES]
+    : ALL_RIDDLES.filter(r => r.cat === cat);
+  shuffleArray(filtered);
+  currentIdx = 0;
+  answered = false;
+  document.getElementById('card').classList.remove('flipped');
+  buildCategoryBar();
+  showCurrent();
+}
+
+function showCurrent() {
+  if (currentIdx >= filtered.length) { showOverlay(); return; }
+
+  const r = filtered[currentIdx];
+  document.getElementById('questionText').textContent = r.q;
+  document.getElementById('answerText').textContent   = r.a;
+  document.getElementById('answerHint').textContent   = r.hint || '';
+  document.getElementById('categoryBadge').textContent = CAT_ICONS[r.cat] + ' ' + r.cat;
+
+  // 進捗
+  const total = filtered.length;
+  const done  = currentIdx + 1;
+  document.getElementById('progressText').textContent = `${done} / ${total} 問`;
+  document.getElementById('progressFill').style.width = `${((done - 1) / total) * 100}%`;
+
+  // ボタン
+  document.getElementById('btnAnswer').disabled = false;
+  document.getElementById('btnNext').disabled   = true;
+  answered = false;
+
+  // カードを表面に
+  document.getElementById('card').classList.remove('flipped');
+
+  // マスコットを切り替え
+  const emojis = ['🦊', '🐼', '🐸', '🐷', '🐨', '🦁', '🐯', '🐙'];
+  document.getElementById('mascot').textContent = emojis[currentIdx % emojis.length];
+}
+
+// ===== 答えを見る =====
+function showAnswer() {
+  if (answered) return;
+  answered = true;
+  document.getElementById('card').classList.add('flipped');
+  document.getElementById('btnAnswer').disabled = true;
+  document.getElementById('btnNext').disabled   = false;
+  playSound('answer');
+  startConfetti(2000);
+}
+
+// ===== 次のなぞなぞ =====
+function nextRiddle() {
+  currentIdx++;
+  playSound('next');
+
+  // 次の問題表示前にカードを戻す（アニメーション後に内容差し替え）
+  const card = document.getElementById('card');
+  card.classList.remove('flipped');
+  setTimeout(showCurrent, 300);
+}
+
+// ===== シャッフル =====
+function shuffle() {
+  shuffleArray(filtered);
+  currentIdx = 0;
+  answered = false;
+  document.getElementById('card').classList.remove('flipped');
+  setTimeout(showCurrent, 100);
+  playSound('next');
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// ===== 完了 =====
+function showOverlay() {
+  const total = ALL_RIDDLES.filter(r => currentCat === 'すべて' || r.cat === currentCat).length;
+  document.getElementById('overlayMsg').innerHTML =
+    `すごい！<strong>${total}問</strong>全部のなぞなぞに<br>挑戦したよ！おめでとう！🎉`;
+  document.getElementById('overlay').classList.add('show');
+  startConfetti(4000);
+  playSound('fanfare');
+}
+
+function restart() {
+  document.getElementById('overlay').classList.remove('show');
+  applyCategory(currentCat);
+}
+
+// ===== サウンド（Web Audio API）=====
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playSound(type) {
+  if (!soundOn) return;
+  try {
+    const ctx = getAudioCtx();
+    if (type === 'answer') {
+      // ポコッ
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(); osc.stop(ctx.currentTime + 0.3);
+    } else if (type === 'next') {
+      // ピコッ
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.start(); osc.stop(ctx.currentTime + 0.15);
+    } else if (type === 'fanfare') {
+      // ファンファーレ（音符列）
+      const notes = [523, 659, 784, 1047];
+      notes.forEach((freq, i) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        const t = ctx.currentTime + i * 0.18;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        osc.start(t); osc.stop(t + 0.35);
+      });
+    }
+  } catch(e) { /* サウンド非対応環境では無視 */ }
+}
+
+// サウンドトグル
+document.getElementById('soundToggle').onclick = () => {
+  soundOn = !soundOn;
+  document.getElementById('soundToggle').textContent = soundOn ? '🔊' : '🔇';
+};
+
+// ===== 紙吹雪 =====
+const canvas   = document.getElementById('confetti-canvas');
+const ctx2d    = canvas.getContext('2d');
+let confettiParticles = [];
+let confettiTimer = null;
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function startConfetti(duration) {
+  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#cc5de8'];
+  for (let i = 0; i < 120; i++) {
+    confettiParticles.push({
+      x: Math.random() * canvas.width,
+      y: -20,
+      vx: (Math.random() - 0.5) * 4,
+      vy: Math.random() * 3 + 2,
+      size: Math.random() * 10 + 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 6,
+      shape: Math.random() < 0.5 ? 'rect' : 'circle',
+    });
+  }
+  if (!confettiTimer) animateConfetti();
+  setTimeout(() => { confettiParticles = []; }, duration);
+}
+
+function animateConfetti() {
+  ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+  confettiParticles.forEach(p => {
+    p.x  += p.vx;
+    p.y  += p.vy;
+    p.vy += 0.05; // gravity
+    p.rot += p.rotSpeed;
+    ctx2d.save();
+    ctx2d.translate(p.x, p.y);
+    ctx2d.rotate(p.rot * Math.PI / 180);
+    ctx2d.fillStyle = p.color;
+    ctx2d.globalAlpha = 0.85;
+    if (p.shape === 'rect') {
+      ctx2d.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+    } else {
+      ctx2d.beginPath();
+      ctx2d.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+      ctx2d.fill();
+    }
+    ctx2d.restore();
+  });
+  confettiParticles = confettiParticles.filter(p => p.y < canvas.height + 40);
+  confettiTimer = requestAnimationFrame(animateConfetti);
+  if (confettiParticles.length === 0) {
+    cancelAnimationFrame(confettiTimer);
+    confettiTimer = null;
+    ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+// ===== 起動 =====
+init();
+</script>
+</body>
+</html>
