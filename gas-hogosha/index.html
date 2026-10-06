@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>学級だより</title>
 <style>
@@ -153,7 +152,11 @@
     cursor: zoom-in;
     overflow: hidden;
   }
-  .thumbs img { display: block; height: 160px; width: auto; }
+  .thumbs img { display: block; height: 160px; width: auto; min-width: 113px; }
+  .thumbs img:not([src]) { background: var(--line); animation: pulse 1.2s ease-in-out infinite; }
+  .thumbs img.error { width: 113px; font-size: 11px; color: var(--danger); background: var(--danger-soft); }
+  @keyframes pulse { 50% { opacity: .5; } }
+  #viewer .loading { color: #ccc; padding: 40px; font-size: 15px; }
   .hint { font-size: 12px; color: var(--sub); margin-top: 4px; }
   .duetag {
     display: inline-block;
@@ -229,33 +232,33 @@
   </section>
 </main>
 
-<footer>
-  ご不明な点は連絡帳または学校までお問い合わせください。
-</footer>
+<footer id="footer"></footer>
 
 <div id="viewer" role="dialog" aria-modal="true" aria-label="画像の拡大表示">
   <div class="bar">
     <span id="viewerTitle"></span>
     <button type="button" id="viewerClose">閉じる ✕</button>
   </div>
-  <div class="stage"><img id="viewerImg" alt=""></div>
+  <div class="stage"><div class="loading" id="viewerLoading">読み込み中…</div><img id="viewerImg" alt=""></div>
   <div class="pager" id="viewerPager">
     <button type="button" id="viewerPrev">◀ 前</button>
     <button type="button" id="viewerNext">次 ▶</button>
   </div>
 </div>
 
-<script src="data.js"></script>
+<script>
+  const DATA = <?!= dataJson ?>;
+</script>
 <script>
 (function () {
   const NEW_DAYS = 7;       // 掲載から何日間「NEW」を付けるか
   const SOON_DAYS = 3;      // 期限が何日以内なら色を変えるか
   const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 
-  const handouts = typeof HANDOUTS !== "undefined" ? HANDOUTS : [];
-  const submissions = typeof SUBMISSIONS !== "undefined" ? SUBMISSIONS : [];
-  const notices = typeof NOTICES !== "undefined" ? NOTICES : [];
-  const info = typeof CLASS_INFO !== "undefined" ? CLASS_INFO : {};
+  const handouts = DATA.handouts || [];
+  const submissions = DATA.submissions || [];
+  const notices = DATA.notices || [];
+  const info = DATA.info || {};
 
   // ---- ユーティリティ ----
   function esc(s) {
@@ -289,6 +292,7 @@
   document.getElementById("pageTitle").textContent = title || "学級だより";
   if (title) document.title = title;
   if (info.updated) document.getElementById("updated").textContent = "最終更新：" + fmt(info.updated);
+  document.getElementById("footer").textContent = info.contact || "";
 
   // ---- ① 配布物 ----
   const sortedHandouts = handouts.slice().sort(byDateDesc);
@@ -308,7 +312,7 @@
           <div class="thumbs">
             ${imgs.map((src, j) => `
               <button type="button" data-h="${i}" data-p="${j}" aria-label="${esc(h.title)} ${j + 1}枚目を拡大">
-                <img src="${esc(src)}" alt="${esc(h.title)} ${j + 1}枚目" loading="lazy">
+                <img data-id="${esc(src)}" alt="${esc(h.title)} ${j + 1}枚目">
               </button>`).join("")}
           </div>
           <div class="hint">画像をタップすると大きく表示されます${imgs.length > 1 ? `（全${imgs.length}枚）` : ""}</div>` : ""}
@@ -384,6 +388,37 @@
     </article>`).join("")
     : '<p class="empty">現在、お知らせはありません。</p>';
 
+  // ---- 画像の読み込み（Drive から GAS 経由で取得） ----
+  const imageCache = {};
+  function loadImage(id, width) {
+    const key = id + "@" + width;
+    if (!imageCache[key]) {
+      imageCache[key] = new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .getImage(id, width);
+      });
+      imageCache[key].catch(() => { delete imageCache[key]; });
+    }
+    return imageCache[key];
+  }
+  // 一度に大量に呼ぶと遅くなるので、画面に近づいたものから順に読む
+  const thumbObserver = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      thumbObserver.unobserve(e.target);
+      loadThumb(e.target);
+    });
+  }, { rootMargin: "300px" }) : null;
+  function loadThumb(img) {
+    loadImage(img.dataset.id, 400)
+      .then(url => { img.src = url; })
+      .catch(() => { img.classList.add("error"); img.alt = "画像を読み込めませんでした"; });
+  }
+  handoutEl.querySelectorAll("img[data-id]").forEach(img =>
+    thumbObserver ? thumbObserver.observe(img) : loadThumb(img));
+
   // ---- 画像の拡大表示 ----
   const viewer = document.getElementById("viewer");
   const vImg = document.getElementById("viewerImg");
@@ -393,9 +428,22 @@
   const vPager = document.getElementById("viewerPager");
   let cur = null, page = 0;
 
+  const vLoading = document.getElementById("viewerLoading");
   function show() {
     const imgs = cur.images;
-    vImg.src = imgs[page];
+    const want = page;
+    vImg.removeAttribute("src");
+    vImg.style.display = "none";
+    vLoading.textContent = "読み込み中…";
+    vLoading.style.display = "";
+    loadImage(imgs[page], 1600).then(url => {
+      if (want !== page || !viewer.classList.contains("open")) return;
+      vImg.src = url;
+      vImg.style.display = "";
+      vLoading.style.display = "none";
+    }).catch(() => {
+      if (want === page) vLoading.textContent = "画像を読み込めませんでした。時間をおいて再度お試しください。";
+    });
     vImg.alt = `${cur.title} ${page + 1}枚目`;
     vTitle.textContent = imgs.length > 1 ? `${cur.title}（${page + 1} / ${imgs.length}）` : cur.title;
     vPager.style.display = imgs.length > 1 ? "flex" : "none";
