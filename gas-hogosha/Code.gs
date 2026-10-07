@@ -163,6 +163,9 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('学級だより')
     .addItem('ページにすぐ反映する', 'clearCache')
     .addItem('ページのURLを表示', 'showUrl')
+    .addSeparator()
+    .addItem('投稿フォームを作成', 'createPostForm')
+    .addItem('投稿フォームのURLを表示', 'showFormUrl')
     .addToUi();
 }
 
@@ -184,6 +187,7 @@ function showUrl() {
 /** 初回に1回だけ実行：シート・見出し・チェックボックス・サンプル行を作る */
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  PropertiesService.getScriptProperties().setProperty('spreadsheetId', ss.getId());
 
   let st = ss.getSheetByName(SHEET.SETTINGS);
   if (!st) {
@@ -225,4 +229,157 @@ function setup() {
   const sheet1 = ss.getSheetByName('シート1') || ss.getSheetByName('Sheet1');
   if (sheet1 && sheet1.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(sheet1);
   clearCache();
+}
+
+// ---------------------------------------------------------------
+// 投稿フォーム（タブレットで撮影 → フォーム送信 → シートに自動で1行追加）
+// ---------------------------------------------------------------
+const FORM_PROP = 'postFormId';
+const Q = {
+  TYPE: '種類',
+  TITLE: 'タイトル',
+  BODY: '内容',
+  IMAGES: '画像',
+  DEADLINE: '提出期限',
+  SUBMIT_WHAT: '提出するもの',
+  IMPORTANT: '重要なお知らせ',
+  PUBLISH: '公開',
+};
+const TYPE = { HANDOUT: '配布物（お手紙）', SUBMISSION: '提出物', NOTICE: 'お知らせ' };
+const PUBLISH_NOW = 'すぐ公開する';
+const ALLOWED_KEY = '投稿できるメール';
+
+/** メニューから1回だけ実行：投稿フォームを作り、送信時の自動処理を登録する */
+function createPostForm() {
+  const ui = SpreadsheetApp.getUi();
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty(FORM_PROP)) {
+    ui.alert('投稿フォームはすでに作成済みです。\nメニュー「投稿フォームのURLを表示」から開けます。');
+    return;
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const info = readSettings_(ss);
+
+  const form = FormApp.create(((info.className || '') + ' 学級だより 投稿').trim())
+    .setDescription('タブレットで撮影したお手紙などを投稿します。送信すると保護者ページ用のシートに追加されます。')
+    .setConfirmationMessage('受け付けました。「すぐ公開する」を選ばなかった場合は、スプレッドシートで「公開」にチェックすると保護者ページに出ます。')
+    .setAllowResponseEdits(false)
+    .setShowLinkToRespondAgain(true);
+  try {
+    form.setEmailCollectionType(FormApp.EmailCollectionType.VERIFIED);
+  } catch (e) {
+    form.setCollectEmail(true);
+  }
+
+  form.addMultipleChoiceItem().setTitle(Q.TYPE).setRequired(true)
+    .setChoiceValues([TYPE.HANDOUT, TYPE.SUBMISSION, TYPE.NOTICE]);
+  form.addTextItem().setTitle(Q.TITLE).setRequired(true);
+  form.addParagraphTextItem().setTitle(Q.BODY);
+  // ※「画像」（ファイルのアップロード）はスクリプトから作れないため、README の手順で手動追加する
+  form.addDateItem().setTitle(Q.DEADLINE).setHelpText('配布物・提出物で、提出が必要なときだけ');
+  form.addTextItem().setTitle(Q.SUBMIT_WHAT).setHelpText('配布物のときだけ（例：参加票）');
+  form.addCheckboxItem().setTitle(Q.IMPORTANT).setChoiceValues(['重要']).setHelpText('お知らせのときだけ。ページの一番上に表示されます');
+  form.addMultipleChoiceItem().setTitle(Q.PUBLISH).setRequired(true)
+    .setChoiceValues(['下書きにする（あとでシートで公開）', PUBLISH_NOW]);
+
+  props.setProperty(FORM_PROP, form.getId());
+  ScriptApp.newTrigger('onPostFormSubmit').forForm(form).onFormSubmit().create();
+
+  // 投稿できる人：作成者のメールを登録（設定シートで追加可能。カンマ区切り）
+  const me = Session.getEffectiveUser().getEmail();
+  const st = ss.getSheetByName(SHEET.SETTINGS);
+  if (st && me && !readSettingRaw_(ss, ALLOWED_KEY)) st.appendRow([ALLOWED_KEY, me]);
+
+  ui.alert(
+    '投稿フォームを作成しました。\n\n' +
+    '【最後に1つだけ手作業が必要です】\n' +
+    'フォームの編集画面で「画像」という名前の「ファイルのアップロード」の質問を追加してください（README参照）。\n\n' +
+    '編集：' + form.getEditUrl() + '\n' +
+    '投稿用URL：' + form.getPublishedUrl()
+  );
+}
+
+function showFormUrl() {
+  const id = PropertiesService.getScriptProperties().getProperty(FORM_PROP);
+  if (!id) {
+    SpreadsheetApp.getUi().alert('まだ投稿フォームがありません。メニュー「投稿フォームを作成」を実行してください。');
+    return;
+  }
+  const form = FormApp.openById(id);
+  SpreadsheetApp.getUi().alert('投稿用URL：' + form.getPublishedUrl() + '\n\n編集：' + form.getEditUrl());
+}
+
+/** フォーム送信時に自動で呼ばれる（インストール型トリガー） */
+function onPostFormSubmit(e) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(findSpreadsheetId_());
+    const r = e.response;
+
+    // 登録されたメール以外からの投稿は無視（フォームのURLが漏れても掲載されない）
+    const email = String(r.getRespondentEmail() || '').toLowerCase();
+    const allowed = String(readSettingRaw_(ss, ALLOWED_KEY) || '').toLowerCase()
+      .split(/[,、\s]+/).filter(String);
+    if (!email || allowed.indexOf(email) === -1) {
+      console.warn('許可されていないメールからの投稿を無視しました: ' + email);
+      return;
+    }
+
+    const a = {};
+    r.getItemResponses().forEach(ir => { a[ir.getItem().getTitle()] = ir.getResponse(); });
+
+    const type = str_(a[Q.TYPE]);
+    const title = str_(a[Q.TITLE]);
+    const body = str_(a[Q.BODY]);
+    const deadline = parseYmd_(a[Q.DEADLINE]);
+    const publish = str_(a[Q.PUBLISH]) === PUBLISH_NOW;
+    const today = new Date(r.getTimestamp());
+    const dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const images = [].concat(a[Q.IMAGES] || [])
+      .map(id => 'https://drive.google.com/file/d/' + id + '/view').join('\n');
+
+    if (type === TYPE.HANDOUT) {
+      appendPost_(ss, SHEET.HANDOUTS, [publish, dateOnly, title, body, images, deadline || '', str_(a[Q.SUBMIT_WHAT])]);
+    } else if (type === TYPE.SUBMISSION) {
+      appendPost_(ss, SHEET.SUBMISSIONS, [publish, deadline || '', title, body]);
+    } else if (type === TYPE.NOTICE) {
+      const important = [].concat(a[Q.IMPORTANT] || []).length > 0;
+      appendPost_(ss, SHEET.NOTICES, [publish, dateOnly, title, body, important]);
+    }
+    CacheService.getScriptCache().remove(CACHE_KEY);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// タイトル列（C列）が空いている最初の行に書き込む（チェックボックスが先に入っているため appendRow は使わない）
+function appendPost_(ss, name, values) {
+  const sh = ss.getSheetByName(name);
+  const last = Math.max(sh.getLastRow(), 1);
+  const titles = last > 1 ? sh.getRange(2, 3, last - 1, 1).getValues() : [];
+  let row = titles.findIndex(t => str_(t[0]) === '');
+  row = row === -1 ? last + 1 : row + 2;
+  sh.getRange(row, 1, 1, values.length).setValues([values]);
+  if (sh.getRange(row, 1).getDataValidation() === null) sh.getRange(row, 1).insertCheckboxes();
+  if (name === SHEET.NOTICES && sh.getRange(row, 5).getDataValidation() === null) sh.getRange(row, 5).insertCheckboxes();
+}
+
+function readSettingRaw_(ss, key) {
+  const sh = ss.getSheetByName(SHEET.SETTINGS);
+  if (!sh || sh.getLastRow() < 1) return '';
+  const hit = sh.getRange(1, 1, sh.getLastRow(), 2).getValues().filter(r => str_(r[0]) === key)[0];
+  return hit ? hit[1] : '';
+}
+
+function parseYmd_(v) {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(str_(v));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+
+// フォームのトリガーから呼ばれたとき用（通常はコンテナバインドなので getActiveSpreadsheet で取れる）
+function findSpreadsheetId_() {
+  const id = PropertiesService.getScriptProperties().getProperty('spreadsheetId');
+  if (!id) throw new Error('スプレッドシートが見つかりません。setup をもう一度実行してください。');
+  return id;
 }
