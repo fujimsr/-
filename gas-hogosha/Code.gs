@@ -1,5 +1,5 @@
 /**
- * 保護者向けページ（学級だより Web版）
+ * 保護者向けページ「確認サイト」
  *
  * スプレッドシートに「コンテナバインド」して使います。
  *   1. スプレッドシート → 拡張機能 → Apps Script を開き、このファイルと index.html を貼り付け
@@ -33,7 +33,7 @@ function doGet() {
   const t = HtmlService.createTemplateFromFile('index');
   // </script> などで閉じられないよう < をエスケープして埋め込む
   t.dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
-  const title = [data.info.className, data.info.title].filter(String).join(' ') || '学級だより';
+  const title = data.info.title || '確認サイト';
   return t.evaluate()
     .setTitle(title)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -160,7 +160,7 @@ function parseDriveIds_(v) {
 // スプレッドシート側
 // ---------------------------------------------------------------
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu('学級だより')
+  SpreadsheetApp.getUi().createMenu('確認サイト')
     .addItem('ページにすぐ反映する', 'clearCache')
     .addItem('ページのURLを表示', 'showUrl')
     .addSeparator()
@@ -195,7 +195,7 @@ function setup() {
     st.getRange(1, 1, 4, 2).setValues([
       ['学校名', '〇〇市立〇〇小学校'],
       ['クラス名', '3年1組'],
-      ['ページタイトル', '学級だより'],
+      ['ページタイトル', '確認サイト'],
       ['フッターの一言', 'ご不明な点は連絡帳または学校までお問い合わせください。'],
     ]);
     st.setColumnWidth(1, 140).setColumnWidth(2, 360);
@@ -260,7 +260,7 @@ function createPostForm() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const info = readSettings_(ss);
 
-  const form = FormApp.create(((info.className || '') + ' 学級だより 投稿').trim())
+  const form = FormApp.create(((info.className || '') + ' 確認サイト 投稿').trim())
     .setDescription('タブレットで撮影したお手紙などを投稿します。送信すると保護者ページ用のシートに追加されます。')
     .setConfirmationMessage('受け付けました。「すぐ公開する」を選ばなかった場合は、スプレッドシートで「公開」にチェックすると保護者ページに出ます。')
     .setAllowResponseEdits(false)

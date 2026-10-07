@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow">
-<title>学級だより</title>
+<title>確認サイト</title>
 <style>
   :root {
     --bg: #f6f4ef;
@@ -287,10 +287,10 @@
   function byDateDesc(a, b) { return (parseDate(b.date) || 0) - (parseDate(a.date) || 0); }
 
   // ---- ヘッダー ----
-  document.getElementById("school").textContent = info.school || "";
-  const title = [info.className, info.title].filter(Boolean).join(" ");
-  document.getElementById("pageTitle").textContent = title || "学級だより";
-  if (title) document.title = title;
+  document.getElementById("school").textContent = [info.school, info.className].filter(Boolean).join(" ");
+  const title = info.title || "確認サイト";
+  document.getElementById("pageTitle").textContent = title;
+  document.title = title;
   if (info.updated) document.getElementById("updated").textContent = "最終更新：" + fmt(info.updated);
   document.getElementById("footer").textContent = info.contact || "";
 
