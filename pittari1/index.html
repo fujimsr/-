@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<base target="_top">
+<title>ぴったり1</title>
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-size:14px;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+:root{
+ --table:#14294b; --table-2:#0d1d38; --line:#2a4472; --lane:#112443;
+ --card:#f6f6f0; --ink:#1b2a44; --ink-soft:#5a6782;
+ --gold:#f2b632; --shu:#e5533c; --muted:#a9b8d3; --fg:#eef2fa;
+ --d2:#e5533c; --d3:#2f8a58; --d4:#2c4f8f; --d5:#7656b0; --d6:#1f8a8f; --d8:#c26a1b; --d12:#8a5a2b;
+ --stone:#6b7385; --stone-2:#4c5366;
+ --back-a:#24457a; --back-b:#1d3a69; --back-edge:#e8ecf5;
+ --f-display:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+ --f-body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+ color-scheme:dark;
+}
+html{background:var(--table-2)}
+body{background:radial-gradient(120% 80% at 50% 0%,var(--table) 0%,var(--table-2) 75%);color:var(--fg);font-family:var(--f-body);min-height:100vh;overflow-x:hidden}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:14px 32px;display:flex;flex-direction:column;gap:12px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:400;font-size:1.4rem;line-height:1.1;margin:0;letter-spacing:.02em}
+h1 small{display:block;font-family:var(--f-body);font-weight:700;font-size:.72rem;color:var(--gold);letter-spacing:.2em;margin-bottom:4px}
+.headl{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.score{display:flex;gap:10px;font-variant-numeric:tabular-nums;font-weight:700;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.score b{color:var(--fg);font-size:1.1rem}
+.score .st{color:var(--gold);letter-spacing:.05em;font-size:1rem}
+.back2menu{font:inherit;font-weight:900;font-size:.78rem;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:99px;padding:4px 10px;cursor:pointer}
+.back2menu:focus-visible{outline:2px solid var(--fg)}
+
+/* menu */
+.menuhead{display:flex;flex-direction:column;gap:6px;padding-top:6px}
+.logo{font-family:var(--f-display);font-weight:400;font-size:2.6rem;line-height:1.05;margin:0;letter-spacing:.02em}
+.logo em{font-style:normal;color:var(--gold)}
+.menuhead p{margin:0;color:var(--muted);font-weight:700;font-size:.9rem}
+.pick{display:flex;flex-direction:column;gap:12px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:14px}
+.pickrow{display:flex;align-items:center;justify-content:space-between;gap:8px 10px;flex-wrap:wrap;font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.1em}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;font-weight:900;font-size:.82rem;letter-spacing:.02em;border:2px solid var(--line);border-radius:99px;background:transparent;color:var(--muted);padding:6px 11px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#2a1e00}
+.chips button:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.chips button small{font-size:.62rem;font-weight:700;margin-left:4px;opacity:.8}
+.demo{display:flex;justify-content:center;gap:6px;padding:4px 0 2px}
+.startrow{display:flex;gap:8px;flex-wrap:wrap}
+.recs{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.75rem;font-weight:700;color:var(--muted)}
+.recs b{color:var(--fg)}
+
+/* buttons */
+.btn{font:inherit;font-weight:900;font-size:1rem;border:0;border-radius:12px;padding:13px 18px;cursor:pointer;background:var(--gold);color:#2a1e00;flex:1 1 auto;box-shadow:0 3px 0 #b5831a;touch-action:manipulation}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #b5831a}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn.ghost{background:transparent;color:var(--fg);border:2px solid var(--line);box-shadow:none;flex:0 1 auto;font-size:.88rem}
+.btn.ghost[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+.btn.alt{background:transparent;color:var(--gold);border:2px solid var(--gold);box-shadow:none;display:flex;flex-direction:column;align-items:center;line-height:1.25}
+.btn.alt small{font-size:.66rem;font-weight:700;color:var(--muted)}
+.btn:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.linkbtn{align-self:center;font:inherit;font-size:.75rem;font-weight:700;color:var(--muted);background:none;border:0;text-decoration:underline;cursor:pointer}
+
+/* fraction */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;font-variant-numeric:tabular-nums;margin:0 .1em}
+.fr i{font-style:normal;display:block;padding:0 .18em}
+.fr i:first-child{border-bottom:.09em solid currentColor;padding-bottom:.08em}
+.fr i:last-child{padding-top:.08em}
+.eq{font-weight:900;line-height:2.1;font-size:.95rem}
+.eq .op{margin:0 .15em;color:var(--muted)}
+.eq .one{font-family:var(--f-display);color:var(--gold);font-size:1.15em}
+.eq .over{color:var(--shu)}
+
+/* tiles */
+.tile{position:absolute;left:0;top:0;border-radius:9px;padding-top:4px;background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:900;box-shadow:0 2px 0 rgba(0,0,0,.25),0 5px 10px rgba(0,0,0,.25);overflow:hidden;will-change:transform}
+.tile::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--dc,var(--ink-soft))}
+.tile .fr{font-size:var(--tf,1.25rem);color:var(--dc,var(--ink))}
+.tile.d2{--dc:var(--d2)}.tile.d3{--dc:var(--d3)}.tile.d4{--dc:var(--d4)}.tile.d5{--dc:var(--d5)}.tile.d6{--dc:var(--d6)}.tile.d8{--dc:var(--d8)}
+.tile.cur{box-shadow:0 0 0 3px var(--gold),0 8px 16px rgba(0,0,0,.4);z-index:3}
+.tile.stone{background:repeating-linear-gradient(135deg,var(--stone) 0 7px,var(--stone-2) 7px 14px);color:#d6dbe6}
+.tile.stone::before{background:#3a4051}
+.tile.stone .fr{color:#c6ccd8;opacity:.75;font-size:calc(var(--tf,1.25rem)*.8)}
+.tile.stone::after{content:"いし";position:absolute;bottom:2px;right:5px;font-size:.58rem;font-weight:900;color:#eef2fa;opacity:.8}
+.tile.mini{position:relative;width:54px;height:44px;--tf:1.05rem}
+
+/* game */
+.top2{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
+.nextbox{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.62rem;font-weight:700;color:var(--muted);letter-spacing:.08em}
+.goal{display:flex;flex-direction:column;gap:5px;min-width:0}
+.goal .row1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.78rem;font-weight:700;color:var(--muted)}
+.goal .row1 b{color:var(--fg);font-size:1rem;font-variant-numeric:tabular-nums}
+.sbar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.sbar i{display:block;height:100%;width:0;background:var(--gold);transition:width .3s}
+.boardwrap{display:grid;grid-template-columns:minmax(0,1fr) 26px;gap:6px;align-items:end}
+.board{position:relative;border-radius:12px;background:var(--table-2);border:2px solid var(--line);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+.lanes{position:absolute;inset:0;display:flex}
+.lanes i{flex:1;border-right:1px dashed rgba(169,184,211,.14)}
+.lanes i:last-child{border-right:0}
+.lanes i.on{background:linear-gradient(180deg,rgba(242,182,50,.14),rgba(242,182,50,.02))}
+.gauge{display:flex;flex-direction:column-reverse;gap:0;padding:2px 0}
+.gauge div{position:relative;flex:1;display:flex;align-items:center}
+.gauge span{display:block;width:100%;height:70%;border-radius:4px;border:1px solid var(--line);background:rgba(255,255,255,.03);position:relative;overflow:hidden}
+.gauge span i{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--gold);transition:height .25s}
+.gauge.off span{opacity:.35}
+.gauge.off span i{height:0!important}
+.gaugecap{font-size:.55rem;color:var(--muted);text-align:center;font-weight:700;line-height:1.2}
+.msg{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-height:64px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.msg .big{font-family:var(--f-display);font-size:1.05rem;line-height:1.3;color:var(--gold)}
+.msg .big.bad{color:var(--shu)}
+.msg p{margin:0;font-size:.82rem;line-height:1.5;color:var(--muted);font-weight:700}
+.pad{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px}
+.pad .btn{font-size:1.25rem;padding:14px 6px;min-height:58px}
+.pad .btn small{display:block;font-size:.66rem;font-weight:700}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tools .btn{flex:1 1 0}
+.pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);z-index:6;pointer-events:none;font-family:var(--f-display);font-size:1.5rem;padding:8px 16px;border-radius:99px;background:var(--gold);color:#2a1e00;white-space:nowrap;box-shadow:0 0 0 4px rgba(242,182,50,.25),0 6px 16px rgba(0,0,0,.35)}
+.pop.bad{background:var(--shu);color:#fff;box-shadow:0 0 0 4px rgba(229,83,60,.25),0 6px 16px rgba(0,0,0,.35)}
+
+/* result */
+.role{display:inline-flex;align-self:center;align-items:center;gap:6px;font-family:var(--f-display);font-weight:400;font-size:1.5rem;line-height:1;padding:10px 18px;border-radius:99px;border:2px solid var(--muted);color:var(--fg);animation:rolein .45s cubic-bezier(.2,1.4,.4,1)}
+.role.win{background:var(--gold);border-color:var(--gold);color:#2a1e00;box-shadow:0 0 0 4px rgba(242,182,50,.25),0 6px 16px rgba(0,0,0,.35)}
+.role.lose{background:transparent;border-color:var(--shu);color:var(--shu)}
+@keyframes rolein{from{transform:scale(.4);opacity:0}}
+.ptboard{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ptcol{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--table-2)}
+.ptcol .who{font-size:.72rem;font-weight:900;color:var(--muted);letter-spacing:.1em}
+.ptcol .plus{font-family:var(--f-display);font-size:1.9rem;line-height:1.1;color:var(--muted);font-variant-numeric:tabular-nums}
+.ptcol.got{border-color:var(--gold)}
+.ptcol.got .plus{color:var(--gold)}
+.ptcol .why{font-size:.74rem;color:var(--muted);line-height:1.6;font-weight:700}
+.ptcol .why b{color:var(--fg)}
+.reslist{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:8px 12px;max-height:240px;overflow:auto}
+.reslist .h{font-size:.72rem;font-weight:900;color:var(--muted);letter-spacing:.1em}
+.reslist .eq{font-size:.85rem;line-height:2}
+.reslist .eq.bad{color:#f3a596}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+details{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+summary{cursor:pointer;font-weight:900;font-size:.92rem}
+details p,details li{font-size:.85rem;line-height:1.7}
+details ol{padding-left:1.2em;margin:.4em 0}
+table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:6px}
+td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{font-weight:900;color:var(--gold)}
+td:last-child{text-align:right;font-weight:900;white-space:nowrap}
+.note{margin:6px 0 0;color:var(--muted);font-size:.75rem}
+
+/* cover / tutorial */
+.cover{position:fixed;inset:0;z-index:50;background:var(--table-2);display:grid;place-items:center;padding:24px 16px;padding-top:calc(24px + env(safe-area-inset-top,0px));overflow:auto}
+.cover.dim{background:rgba(13,29,56,.92)}
+.coverbox{max-width:420px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.covericon{font-size:3.4rem;line-height:1;color:var(--gold);font-family:var(--f-display)}
+.covertitle{font-family:var(--f-display);font-size:1.6rem;line-height:1.25}
+.coverbox p{margin:0;color:var(--muted);font-weight:700;line-height:1.6}
+.coverbox .btn{width:100%;font-size:1.1rem;padding:16px}
+.tutdots{display:flex;gap:6px}
+.tutdots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.tutdots i.on{background:var(--gold);width:22px;border-radius:99px}
+.tutart{min-height:130px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%}
+.tutnav{display:flex;gap:8px;width:100%}
+.tutnav .btn{flex:1}
+.tbig{font-family:var(--f-display);font-size:1.7rem;color:var(--gold);line-height:1.2}
+.tline{display:flex;gap:4px;align-items:center;padding:6px;border-radius:12px;border:2px dashed var(--line)}
+.tline.ok{border-color:var(--gold);border-style:solid}
+
+/* study */
+.smode{justify-content:center}
+.scard{position:relative;display:block;width:100%;height:300px;perspective:1100px;border:0;padding:0;background:none;font:inherit;color:var(--ink);cursor:pointer;text-align:center}
+.scard:focus-visible{outline:3px solid var(--gold);outline-offset:4px;border-radius:16px}
+.sinner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.3,.7,.3,1)}
+.scard.flip .sinner{transform:rotateY(180deg)}
+.sface{position:absolute;inset:0;border-radius:16px;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);box-shadow:0 3px 0 rgba(0,0,0,.25),0 10px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:18px 16px;overflow:hidden}
+.sback{transform:rotateY(180deg)}
+.sface .kind{font-size:.75rem;font-weight:900;padding:3px 10px;border-radius:99px;background:var(--table);color:var(--fg)}
+.sface .q{font-size:1.8rem;font-weight:900;line-height:1.5}
+.sface .q .op{color:var(--ink-soft)}
+.sface .q .one{font-family:var(--f-display);color:var(--shu)}
+.sface .q .ask{display:inline-block;min-width:1.4em;border-bottom:3px solid var(--shu);color:var(--shu)}
+.sface .ans{font-size:2.2rem;font-weight:900;color:var(--shu)}
+.sface .exp{font-size:1rem;font-weight:900;color:var(--ink);line-height:2}
+.sface .exp .op{color:var(--ink-soft)}
+.sface .eq .one{color:var(--shu)}
+.stap{position:absolute;bottom:12px;left:0;right:0;font-size:.72rem;font-weight:700;color:var(--ink-soft)}
+.sactions{display:flex;gap:8px}
+.sactions .btn{flex:1}
+.btn.again{background:transparent;color:var(--fg);border:2px solid var(--line);box-shadow:none}
+.sdone{display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center;padding:24px 8px}
+.sdone .big{font-family:var(--f-display);font-size:1.5rem;color:var(--gold)}
+
+@media (prefers-reduced-motion:reduce){.sinner,.sbar i,.gauge span i{transition:none}.role{animation:none}}
+</style>
+</head>
+<body>
+
+<!-- ===== メニュー ===== -->
+<div class="wrap" id="menu">
+ <div class="menuhead">
+  <h1 class="logo">ぴったり<em>1</em></h1>
+  <p>分数の落ちものパズル。横1列が ぴったり1 になると消える！</p>
+  <button type="button" class="back2menu" id="tutOpen" style="align-self:flex-start">？ あそびかた</button>
+ </div>
+ <div class="demo" id="demo" aria-hidden="true"></div>
+ <div class="pick">
+  <div class="pickrow"><span>分数</span>
+   <div class="chips" role="group" aria-label="分数のしゅるい">
+    <button type="button" id="mdSame" aria-pressed="true">同じ分母<small>3・4年</small></button>
+    <button type="button" id="mdDiff" aria-pressed="false">ちがう分母<small>5年</small></button>
+   </div>
+  </div>
+  <div class="pickrow"><span>だれとあそぶ</span>
+   <div class="chips" role="group" aria-label="だれとあそぶ">
+    <button type="button" id="plSolo" aria-pressed="true">ひとりで<small>ステージ</small></button>
+    <button type="button" id="plPvp" aria-pressed="false">ふたりで<small>1台を回す</small></button>
+   </div>
+  </div>
+  <div class="pickrow" id="lvRow" hidden><span>レベル</span>
+   <div class="chips" role="group" aria-label="レベル" id="lvChips">
+    <button type="button" data-lv="1" aria-pressed="true">1</button>
+    <button type="button" data-lv="2" aria-pressed="false">2</button>
+    <button type="button" data-lv="3" aria-pressed="false">3</button>
+   </div>
+  </div>
+  <div class="pickrow"><span>おちるはやさ</span>
+   <div class="chips" role="group" aria-label="おちるはやさ" id="spChips">
+    <button type="button" data-sp="slow" aria-pressed="false">ゆっくり</button>
+    <button type="button" data-sp="normal" aria-pressed="true">ふつう</button>
+    <button type="button" data-sp="fast" aria-pressed="false">はやい</button>
+   </div>
+  </div>
+  <div class="recs" id="recs"></div>
+  <div class="startrow">
+   <button class="btn" id="startBtn" type="button">あそぶ</button>
+   <button class="btn alt" id="studyBtn" type="button">カードで覚える<small id="masteryNote"></small></button>
+  </div>
+ </div>
+</div>
+
+<!-- ===== ゲーム ===== -->
+<div class="wrap" id="game" hidden>
+ <header>
+  <div class="headl">
+   <button class="back2menu" id="toMenu" type="button">‹ メニュー</button>
+   <h1><small id="gTitle">同じ分母・ステージ1</small>ぴったり1</h1>
+  </div>
+  <div class="score" aria-live="polite">
+   <span id="whoNow" hidden></span>
+   <span class="st" id="starsNow">☆☆☆</span>
+   <span>点 <b id="ptNow">0</b></span>
+  </div>
+ </header>
+ <div class="top2">
+  <div class="nextbox">つぎ<div id="nextTile"></div></div>
+  <div class="goal">
+   <div class="row1"><span id="goalLabel">消した列</span><b id="goalNum">0/5</b></div>
+   <div class="sbar"><i id="goalBar"></i></div>
+  </div>
+ </div>
+ <div class="boardwrap">
+  <div class="board" id="board" role="application" aria-label="パズルの盤。列をタップするとタイルがその列へ動き、同じ列をもう一度タップすると落ちます">
+   <div class="lanes" id="lanes"></div>
+  </div>
+  <div class="gauge off" id="gauge" aria-label="ものさし（ヒントを使うと各列の合計の長さが出ます）"></div>
+ </div>
+ <div class="msg" id="msg" aria-live="polite"></div>
+ <div class="pad">
+  <button class="btn ghost" id="bLeft" type="button" aria-label="左へ">◀</button>
+  <button class="btn" id="bDrop" type="button">▼<small>おとす</small></button>
+  <button class="btn ghost" id="bRight" type="button" aria-label="右へ">▶</button>
+ </div>
+ <div class="tools">
+  <button class="btn ghost" id="bHint" type="button" aria-pressed="false">ヒント（ものさし）</button>
+  <button class="btn ghost" id="bPause" type="button">Ⅱ やすむ</button>
+ </div>
+ <details>
+  <summary>ルールと点</summary>
+  <ol>
+   <li>上から分数のタイルが落ちてきます。<b>列をタップ</b>するとその列へ動き、<b>同じ列をもう一度タップ</b>（または ▼）で落ちます。</li>
+   <li>横1列のタイルの合計が<b>ぴったり1</b>になると、その列が消えて点がもらえます。</li>
+   <li>置いたタイルで合計が<b>1をこえる</b>と、そのタイルは<b>いし</b>（0）になって、その場所をふさぎます。</li>
+   <li>列の合計は画面に出ません。自分で計算します。「ヒント（ものさし）」で各列の合計の長さが見えますが、使うと<b>ノーヒントボーナス</b>がなくなります。</li>
+   <li id="ruleGoal">ひとりで：目標の列数を消すとステージクリアで★1つ。3ステージで★3つ。</li>
+  </ol>
+  <table aria-label="点の表">
+   <tr><td>列を消す</td><td>その列のタイル1まいにつき</td><td>1点</td></tr>
+   <tr id="ptDiffRow"><td>分母が2しゅるい以上の列を消す</td><td>通分した</td><td>＋2点</td></tr>
+   <tr><td>ノーヒント</td><td id="nhWhen">ヒントを使わずにステージクリア</td><td>＋5点</td></tr>
+   <tr><td>いし</td><td>1をこえたタイル</td><td>0点</td></tr>
+   <tr id="tieRow"><td>ふたりで同点</td><td>いしが少ないほう→早く置きおわったほう</td><td>勝ち</td></tr>
+  </table>
+ </details>
+</div>
+
+<!-- ===== 結果 ===== -->
+<div class="wrap" id="result" hidden>
+ <header>
+  <div class="headl"><h1><small id="rTitle"></small>けっか</h1></div>
+  <div class="score"><span class="st" id="rStars"></span></div>
+ </header>
+ <div class="role" id="rBadge"></div>
+ <p class="note" id="rLead" style="text-align:center;font-size:.9rem;font-weight:700"></p>
+ <div class="ptboard" id="rBoard"></div>
+ <div class="reslist" id="rList"></div>
+ <div class="actions" id="rActions"></div>
+</div>
+
+<!-- ===== カードで覚える ===== -->
+<div class="wrap" id="study" hidden>
+ <header>
+  <div class="headl">
+   <button class="back2menu" id="studyToMenu" type="button">‹ メニュー</button>
+   <h1><small id="studyTitle"></small>カードで覚える</h1>
+  </div>
+  <div class="score"><span>のこり <b id="sLeft">0</b>まい</span><span>おぼえた <b id="sDone">0</b></span></div>
+ </header>
+ <div class="chips smode" role="group" aria-label="出すカード">
+  <button type="button" id="ssTodo" aria-pressed="true">おぼえていないカード</button>
+  <button type="button" id="ssAll" aria-pressed="false">ぜんぶ</button>
+ </div>
+ <div class="sbar"><i id="sBar"></i></div>
+ <button type="button" class="scard" id="scard" aria-live="polite">
+  <span class="sinner"><span class="sface" id="sFront"></span><span class="sface sback" id="sBack"></span></span>
+ </button>
+ <div class="sactions" id="sActions"></div>
+ <button type="button" class="linkbtn" id="sReset">おぼえた記録をけす</button>
+</div>
+
+<!-- ===== 目かくし・おしらせ ===== -->
+<div class="cover" id="cover" hidden role="dialog" aria-modal="true" aria-labelledby="coverTitle">
+ <div class="coverbox">
+  <div class="covericon" id="coverIcon" aria-hidden="true">1</div>
+  <div class="covertitle" id="coverTitle"></div>
+  <p id="coverText"></p>
+  <button class="btn" id="coverBtn" type="button"></button>
+  <button class="linkbtn" id="coverSub" type="button" hidden></button>
+ </div>
+</div>
+
+<!-- ===== チュートリアル ===== -->
+<div class="cover tut" id="tut" hidden role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+ <div class="coverbox">
+  <div class="tutdots" id="tutDots" aria-hidden="true"></div>
+  <div class="tutart" id="tutArt" aria-hidden="true"></div>
+  <div class="covertitle" id="tutTitle"></div>
+  <p id="tutText"></p>
+  <div class="tutnav">
+   <button class="btn ghost" id="tutBack" type="button">もどる</button>
+   <button class="btn" id="tutNext" type="button">つぎへ</button>
+  </div>
+  <button type="button" class="linkbtn" id="tutSkip">とばす</button>
+ </div>
+</div>
+
+<script>
+'use strict';
+/* ===== 先生が調整できる値 ===== */
+const CONFIG={
+ cols:5, rows:8,
+ stageRows:{1:5,2:6,3:7},          // ひとり：ステージごとに消す列の数
+ stageTiles:{same:{1:18,2:26,3:36},diff:{1:18,2:26,3:40}}, // ひとり：ステージで使えるタイルの数
+ pvpTiles:24,                       // ふたり：1人が置くタイルの数
+ tickMs:{1:1100,2:950,3:800},       // 1マス落ちる時間（ミリ秒）ステージ／レベル別
+ speedMul:{slow:1.5,normal:1,fast:.7},
+ ptPerTile:1, ptDiff:2, ptNoHint:5, winStars:3,
+};
+/* ===== タイルの組（ステージ／レベル別） ===== */
+// [分子,分母]。同じ分母モードは1つのステージに1つの分母だけ。
+const SETS={
+ same:{
+  1:{label:'分母4',tiles:[[1,4],[2,4],[3,4]]},
+  2:{label:'分母6',tiles:[[1,6],[2,6],[3,6],[4,6],[5,6]]},
+  3:{label:'分母8',tiles:[[1,8],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8]]},
+ },
+ diff:{
+  1:{label:'分母2・4',tiles:[[1,2],[1,4],[3,4]]},
+  2:{label:'分母2・3・6',tiles:[[1,2],[1,3],[2,3],[1,6],[5,6]]},
+  3:{label:'分母2・3・4・6',tiles:[[1,2],[1,3],[2,3],[1,4],[3,4],[1,6],[5,6],[2,4],[2,6],[3,6],[4,6]]},
+ },
+};
+const U=120; // 2,3,4,5,6,8 の公倍数。合計は整数で計算する
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=id=>document.getElementById(id);
+const gcd=(a,b)=>b?gcd(b,a%b):a, lcm=(a,b)=>a/gcd(a,b)*b;
+const valOf=t=>t.n*U/t.d;
+const isReduced=t=>gcd(t.n,t.d)===1;
+function mulberry(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const sto={get(k,d){try{const v=localStorage.getItem('pt1-'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('pt1-'+k,JSON.stringify(v))}catch(e){}}};
+
+/* ===== 分数の表示 ===== */
+const frH=(n,d)=>`<span class="fr"><i>${n}</i><i>${d}</i></span>`;
+const OP=s=>`<span class="op">${s}</span>`;
+// 列の式：同じ分母ならそのまま、ちがえば通分して見せる
+function eqParts(tiles){
+ const L=tiles.reduce((m,t)=>lcm(m,t.d),1);
+ const same=tiles.every(t=>t.d===tiles[0].d);
+ const S=tiles.reduce((s,t)=>s+t.n*L/t.d,0);
+ return {L,same,S};
+}
+function eqHTML(tiles,withResult){
+ const {L,same,S}=eqParts(tiles);
+ let h=tiles.map(t=>frH(t.n,t.d)).join(OP('＋'));
+ if(!same)h+=OP('＝')+tiles.map(t=>frH(t.n*L/t.d,L)).join(OP('＋'));
+ if(tiles.length>1)h+=OP('＝')+frH(S,L);
+ if(S===L)h+=OP('＝')+'<span class="one">1</span>';
+ else if(withResult&&S>L)h+=`　<span class="over">1より ${frH(S-L,L)} 大きい</span>`;
+ return h;
+}
+function eqText(tiles){ // 検証用（文字だけ）
+ const {L,same,S}=eqParts(tiles);
+ let s=tiles.map(t=>t.n+'/'+t.d).join('+');
+ if(!same)s+='='+tiles.map(t=>(t.n*L/t.d)+'/'+L).join('+');
+ s+='='+S+'/'+L;
+ if(S===L)s+='=1';else if(S>L)s+=' 1より'+(S-L)+'/'+L+'大きい';
+ return s;
+}
+
+/* ===== 1になる組（タイルの出し方） ===== */
+function combosFor(tiles,maxN){
+ const out=[];const ts=tiles.map(([n,d])=>({n,d,v:n*U/d}));
+ (function rec(i,left,cur){
+  if(left===0){if(cur.length>=2)out.push(cur.slice());return}
+  if(i>=ts.length||cur.length>=maxN)return;
+  for(let k=0;cur.length+k<=maxN&&k*ts[i].v<=left;k++){
+   for(let j=0;j<k;j++)cur.push(ts[i]);
+   rec(i+1,left-k*ts[i].v,cur);
+   for(let j=0;j<k;j++)cur.pop();
+  }
+ })(0,U,[]);
+ return out;
+}
+const COMBO_CACHE={};
+function combosOf(mode,lv){const k=mode+lv;if(!COMBO_CACHE[k]){const cs=combosFor(SETS[mode][lv].tiles,4);COMBO_CACHE[k]=cs.map(c=>({c,w:c.reduce((w,t)=>w*(isReduced(t)?1:.35),1)}))}return COMBO_CACHE[k]}
+function makeQueue(mode,lv,rng){
+ const cs=combosOf(mode,lv),tot=cs.reduce((s,x)=>s+x.w,0);
+ const pick=()=>{let r=rng()*tot;for(const x of cs){r-=x.w;if(r<=0)return x.c}return cs[cs.length-1].c};
+ const q=[];
+ return ()=>{
+  if(!q.length){const b=[...pick(),...pick()];for(let i=b.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[b[i],b[j]]=[b[j],b[i]]}b.forEach(t=>q.push({n:t.n,d:t.d}))}
+  return q.shift();
+ };
+}
+
+/* ===== 状態 ===== */
+const COLS=CONFIG.cols,ROWS=CONFIG.rows;
+let mode=sto.get('mode','same'),play=sto.get('play','solo'),pvpLv=sto.get('lv',1),speed=sto.get('speed','normal');
+let G=null; // 1人分のプレイ
+let S=null; // ひとり：ステージ進行／ふたり：対戦進行
+let tid=0,cw=60,ch=50,uid=0;
+
+function newPlay(lv,seed,who){
+ const rng=mulberry(seed);
+ return {lv,seed,who,next:makeQueue(mode,lv,rng),grid:Array.from({length:COLS},()=>[]),
+  cur:null,nextTile:null,cleared:0,pts:0,diffBonus:0,tilePts:0,stones:0,hintUsed:false,
+  placed:0,log:[],over:false,topped:false,busy:false,paused:false,t0:performance.now(),pausedAt:0,time:0,reason:''};
+}
+const target=()=>play==='solo'?CONFIG.stageRows[G.lv]:CONFIG.pvpTiles;
+const budget=()=>play==='solo'?CONFIG.stageTiles[mode][G.lv]:CONFIG.pvpTiles;
+const tickMs=()=>Math.round(CONFIG.tickMs[G.lv]*CONFIG.speedMul[speed]);
+
+/* ===== 盤の描画 ===== */
+function layout(){
+ const b=$('board');const w=b.clientWidth;cw=w/COLS;
+ ch=Math.max(42,Math.min(cw*.9,72,(innerHeight-320)/ROWS));
+ b.style.height=(ch*ROWS+4)+'px';$('gauge').style.height=(ch*ROWS+4)+'px';
+ b.style.setProperty('--tf',Math.max(13,Math.min(24,(ch-16)/2.3,cw/3.2))+'px');
+ if(!G)return;
+ G.grid.forEach((col,c)=>col.forEach((t,r)=>place(t,c,r,false)));
+ if(G.cur)place(G.cur.t,G.cur.c,G.cur.r,false);
+}
+function tileEl(t){
+ const el=document.createElement('div');
+ el.className='tile d'+t.d+(t.stone?' stone':'');
+ el.innerHTML=frH(t.n,t.d);
+ el.style.width=(cw-6)+'px';el.style.height=(ch-6)+'px';
+ return el;
+}
+function place(t,c,r,anim){
+ const el=t.el;if(!el)return;
+ el.style.width=(cw-6)+'px';el.style.height=(ch-6)+'px';
+ const x=c*cw+3,y=(ROWS-1-r)*ch+3;
+ el.style.transition=anim&&!RM?'transform .12s linear':'none';
+ el.style.transform=`translate(${x}px,${y}px)`;
+}
+function drawLanes(){const l=$('lanes');l.innerHTML='';for(let c=0;c<COLS;c++){const i=document.createElement('i');l.appendChild(i)}}
+function markLane(){[...$('lanes').children].forEach((i,c)=>i.classList.toggle('on',!!G.cur&&G.cur.c===c))}
+function rowTiles(r){const a=[];for(let c=0;c<COLS;c++){const t=G.grid[c][r];if(t&&!t.stone)a.push(t)}return a}
+function rowSum(r){return rowTiles(r).reduce((s,t)=>s+valOf(t),0)}
+function drawGauge(){
+ const g=$('gauge');
+ if(g.children.length!==ROWS){g.innerHTML='';for(let r=0;r<ROWS;r++){const d=document.createElement('div');d.innerHTML='<span><i></i></span>';g.appendChild(d)}}
+ g.classList.toggle('off',!(G&&G.hintOn));
+ if(!G)return;
+ [...g.children].forEach((d,r)=>{d.querySelector('i').style.height=Math.min(100,rowSum(r)/U*100)+'%'});
+}
+function drawNext(){const box=$('nextTile');box.innerHTML='';if(!G.nextTile)return;const el=tileEl(G.nextTile);el.classList.add('mini');el.style.width='';el.style.height='';box.appendChild(el)}
+function drawHud(){
+ const tg=target();
+ if(play==='solo'){
+  $('goalLabel').innerHTML=`消した列　<span style="font-size:.72rem">のこりタイル <b id="tilesLeft">${budget()-G.placed}</b>まい</span>`;$('goalNum').textContent=`${G.cleared}/${tg}`;
+  $('goalBar').style.width=Math.min(100,G.cleared/tg*100)+'%';
+  $('starsNow').textContent=starStr(S.stars);$('whoNow').hidden=true;
+ }else{
+  $('goalLabel').textContent='のこりのタイル';$('goalNum').textContent=`${tg-G.placed}まい`;
+  $('goalBar').style.width=Math.min(100,(tg-G.placed)/tg*100)+'%';
+  $('starsNow').textContent=`A ${starStr(S.stars.A)}  B ${starStr(S.stars.B)}`;
+  $('whoNow').hidden=false;$('whoNow').textContent=G.who+'さんの番';
+ }
+ $('ptNow').textContent=G.pts;
+}
+const starStr=n=>'★'.repeat(Math.min(n,CONFIG.winStars))+'☆'.repeat(Math.max(0,CONFIG.winStars-n));
+function setMsg(big,small,bad){$('msg').innerHTML=(big?`<div class="big${bad?' bad':''}">${big}</div>`:'')+(small?`<p>${small}</p>`:'')}
+function popBadge(text,bad){
+ const p=document.createElement('div');p.className='pop'+(bad?' bad':'');p.textContent=text;$('board').appendChild(p);
+ if(RM){setTimeout(()=>p.remove(),700);return}
+ p.animate([{transform:'translate(-50%,-50%) scale(.4)',opacity:0},{transform:'translate(-50%,-50%) scale(1.1)',opacity:1,offset:.35},{transform:'translate(-50%,-50%) scale(1)',opacity:1,offset:.7},{transform:'translate(-50%,-80%) scale(1)',opacity:0}],{duration:1100,easing:'ease-out'}).onfinish=()=>p.remove();
+}
+
+/* ===== 進行 ===== */
+function startPlay(lv,seed,who){
+ stopTick();
+ G=newPlay(lv,seed,who);
+ [...$('board').querySelectorAll('.tile,.pop')].forEach(e=>e.remove());
+ showScreen('game');layout();drawGauge();
+ $('bHint').setAttribute('aria-pressed','false');
+ $('gTitle').textContent=(mode==='same'?'同じ分母':'ちがう分母')+'・'+(play==='solo'?'ステージ'+lv:'レベル'+lv)+'（'+SETS[mode][lv].label+'）';
+ $('ruleGoal').textContent=play==='solo'?`ひとりで：タイル${CONFIG.stageTiles[mode][lv]}まいのうちに${CONFIG.stageRows[lv]}列消すとステージクリアで★1つ。3ステージで★3つ。`:`ふたりで：1人${CONFIG.pvpTiles}まいずつ、同じ順番のタイルで遊びます。点の多いほうが★1つ（同点なら いしが少ないほう、それも同じなら 早く置きおわったほう）。先に★${CONFIG.winStars}つで優勝。`;
+ $('ptDiffRow').hidden=mode==='same';$('tieRow').hidden=play!=='pvp';
+ $('nhWhen').textContent=play==='solo'?'ヒントを使わずにステージクリア':'ヒントを使わずに、つみあがらずに最後まで';
+ G.nextTile=G.next();
+ setMsg('',play==='solo'?`タイル${budget()}まいのうちに${CONFIG.stageRows[lv]}列消せばクリア！ 列をタップして動かそう`:`${G.who}さんの番。${CONFIG.pvpTiles}まいでたくさん点をとろう`);
+ drawHud();spawn();
+}
+function spawn(){
+ if(G.over)return;
+ if(G.placed>=budget()){endPlay(play==='solo'?'tiles':'done');return}
+ const mid=Math.floor(COLS/2);
+ const order=[...Array(COLS).keys()].sort((a,b)=>Math.abs(a-mid)-Math.abs(b-mid)||a-b);
+ const c=order.find(c=>G.grid[c].length<ROWS);
+ if(c==null){G.topped=true;endPlay('topped');return}
+ const t=G.nextTile;G.nextTile=G.next();t.id=++uid;t.el=tileEl(t);t.el.classList.add('cur');
+ $('board').appendChild(t.el);
+ G.cur={t,c,r:ROWS-1};G.spawnAt=performance.now();place(t,c,ROWS-1,false);
+ if(!RM)t.el.animate([{opacity:0,transform:t.el.style.transform+' scale(.6)'},{opacity:1,transform:t.el.style.transform}],{duration:180});
+ drawNext();markLane();startTick();
+}
+function startTick(){stopTick();if(G&&!G.paused&&!G.over)tid=setTimeout(tick,tickMs())}
+function stopTick(){clearTimeout(tid);tid=0}
+function tick(){
+ if(!G||!G.cur||G.paused||G.over)return;
+ const cu=G.cur,h=G.grid[cu.c].length;
+ if(cu.r>h){cu.r--;place(cu.t,cu.c,cu.r,true);startTick()}else lock();
+}
+function moveTo(c){
+ if(!G||!G.cur||G.paused||G.busy)return false;
+ c=Math.max(0,Math.min(COLS-1,c));const cu=G.cur;
+ if(c===cu.c)return false;
+ // 途中の列もふくめて、いまの高さより高く積まれていたら通れない
+ const step=c>cu.c?1:-1;
+ for(let x=cu.c+step;;x+=step){if(G.grid[x].length>cu.r){bump(cu);return false}if(x===c)break}
+ cu.c=c;place(cu.t,cu.c,cu.r,true);markLane();return true;
+}
+function bump(cu){if(RM)return;cu.t.el.animate([{marginLeft:'0'},{marginLeft:'-5px'},{marginLeft:'5px'},{marginLeft:'0'}],{duration:200})}
+function drop(){
+ if(!G||!G.cur||G.paused||G.busy)return;
+ if(performance.now()-G.spawnAt<250)return; // 前のタイルを落とした指が、次のタイルまで落とさないように
+ const cu=G.cur;cu.r=G.grid[cu.c].length;
+ cu.t.el.style.transition=RM?'none':'transform .16s cubic-bezier(.5,0,1,1)';
+ const x=cu.c*cw+3,y=(ROWS-1-cu.r)*ch+3;cu.t.el.style.transform=`translate(${x}px,${y}px)`;
+ stopTick();G.busy=true;setTimeout(()=>{G.busy=false;lock()},RM?0:170);
+}
+function lock(){
+ if(!G||!G.cur)return;
+ stopTick();
+ const {t,c}=G.cur;G.cur=null;markLane();
+ t.el.classList.remove('cur');
+ const r=G.grid[c].length;G.grid[c].push(t);place(t,c,r,false);G.placed++;G.lastCol=c;
+ const tiles=rowTiles(r);const sum=tiles.reduce((s,x)=>s+valOf(x),0);
+ if(sum>U){
+  // 1をこえた：置いたタイルが「いし」になる。式は置く前の列＋置いたタイル
+  G.stones++;G.log.push({kind:'over',eq:eqHTML(tiles,true),txt:eqText(tiles)});
+  setMsg('1をこえた！ いしになった',eqHTML(tiles,true),true);
+  t.stone=true;t.el.classList.add('stone');popBadge('こえた！',true);
+  if(!RM)t.el.animate([{transform:t.el.style.transform+' rotate(-4deg)'},{transform:t.el.style.transform+' rotate(4deg)'},{transform:t.el.style.transform}],{duration:260});
+  afterLock();
+ }else if(sum===U){
+  clearRow(r,tiles);
+ }else{
+  if(!RM)t.el.animate([{transform:t.el.style.transform+' scaleY(.88)'},{transform:t.el.style.transform}],{duration:140});
+  if(G.grid.every(col=>col.length>r))setMsg('','この列は いっぱい。1になっていないので消えません');
+  afterLock();
+ }
+}
+function clearRow(r,tiles){
+ const diff=new Set(tiles.map(t=>t.d)).size>=2;
+ const p=tiles.length*CONFIG.ptPerTile+(diff?CONFIG.ptDiff:0);
+ G.cleared++;G.tilePts+=tiles.length*CONFIG.ptPerTile;if(diff)G.diffBonus+=CONFIG.ptDiff;G.pts+=p;
+ G.log.push({kind:'one',eq:eqHTML(tiles,true),txt:eqText(tiles),p});
+ setMsg(`ぴったり1！ ＋${p}点`,eqHTML(tiles,true));popBadge('ぴったり1！ ＋'+p);
+ const gone=[];for(let c=0;c<COLS;c++){if(G.grid[c].length>r)gone.push(G.grid[c].splice(r,1)[0])}
+ G.busy=true;
+ const fin=()=>{gone.forEach(t=>t.el.remove());G.grid.forEach((col,c)=>col.forEach((t,rr)=>place(t,c,rr,true)));G.busy=false;afterLock()};
+ if(RM){fin();return}
+ let left=gone.length;
+ gone.forEach((t,i)=>{t.el.style.zIndex=4;const a=t.el.animate([{transform:t.el.style.transform,boxShadow:'0 0 0 3px #f2b632',opacity:1},{transform:t.el.style.transform+' scale(1.12)',boxShadow:'0 0 0 6px #f2b632',opacity:1,offset:.4},{transform:t.el.style.transform+' scale(.2)',opacity:0}],{duration:420,delay:i*40,easing:'ease-in',fill:'forwards'});a.onfinish=()=>{if(--left===0)fin()}});
+}
+function afterLock(){
+ drawHud();drawGauge();
+ if(play==='solo'&&G.cleared>=target()){endPlay('clear');return}
+ spawn();
+}
+function endPlay(reason){
+ stopTick();G.over=true;G.cur=null;markLane();G.reason=reason;G.time=performance.now()-G.t0;
+ const ok=play==='solo'?reason==='clear':true;
+ G.noHint=!G.hintUsed&&(reason==='clear'||reason==='done')?CONFIG.ptNoHint:0;
+ G.pts+=G.noHint;drawHud();
+ setTimeout(()=>play==='solo'?soloResult(ok):pvpAfterTurn(),RM?150:650);
+}
+function setHint(on){if(!G||G.over)return;G.hintOn=on;if(on)G.hintUsed=true;$('bHint').setAttribute('aria-pressed',on);drawGauge();
+ if(on)setMsg('ものさし','右のものさしに、各列の合計の長さが出ます。このステージはノーヒントボーナスなし')}
+function pause(on){
+ if(!G||G.over)return;G.paused=on;
+ if(on){stopTick();G.pausedAt=performance.now();showCover('Ⅱ','やすみちゅう','タイルは止まっています','つづける',()=>pause(false))}
+ else{G.t0+=performance.now()-G.pausedAt;hideCover();startTick()}
+}
+
+/* ===== ひとり ===== */
+function startSolo(){S={stars:0,stage:1,total:0,stageLog:[]};startPlay(1,(Math.random()*2**32)>>>0,'')}
+function soloResult(ok){
+ const lv=G.lv;
+ if(ok){S.stars++;S.total+=G.pts;S.stageLog.push({lv,pts:G.pts})}
+ const allClear=ok&&S.stars>=CONFIG.winStars;
+ if(allClear){const k='best-'+mode;const b=sto.get(k,0);S.newBest=S.total>b;if(S.newBest)sto.set(k,S.total);sto.set('clear-'+mode,sto.get('clear-'+mode,0)+1)}
+ $('rTitle').textContent=(mode==='same'?'同じ分母':'ちがう分母')+'・ステージ'+lv;
+ $('rStars').textContent=starStr(S.stars);
+ const b=$('rBadge');b.className='role '+(ok?'win':'lose');b.textContent=allClear?'ぜんぶクリア！':ok?'ステージクリア！':G.reason==='topped'?'つみあがった…':'タイルがなくなった…';
+ $('rLead').textContent=allClear?`3ステージの合計 ${S.total}点${S.newBest?'（自己ベスト！）':''}`:ok?`★を1つゲット。つぎはステージ${lv+1}`:`${G.cleared}/${target()}列 消せました。もう一度ちょうせん！`;
+ $('rBoard').innerHTML=ptcolHTML('消した列の点',`${G.tilePts+G.diffBonus}`,`消した列 <b>${G.cleared}</b>（タイル ${G.tilePts}点${mode==='diff'?`・通分 ${G.diffBonus}点`:''}）<br>使ったタイル ${G.placed}/${budget()}まい`,true)
+  +ptcolHTML('ボーナス',`${G.noHint}`,`ノーヒント ${G.noHint?'<b>＋'+CONFIG.ptNoHint+'</b>':G.hintUsed?'なし（ヒント使用）':'なし'}<br>いし ${G.stones}こ`,G.noHint>0);
+ $('rList').innerHTML=logHTML(G.log);
+ const a=$('rActions');a.innerHTML='';
+ if(allClear){addBtn(a,'もう一度ステージ1から',()=>startSolo());}
+ else if(ok){addBtn(a,`ステージ${lv+1}へ`,()=>{S.stage=lv+1;startPlay(lv+1,(Math.random()*2**32)>>>0,'')})}
+ else addBtn(a,`ステージ${lv}をやりなおす`,()=>startPlay(lv,(Math.random()*2**32)>>>0,''));
+ addBtn(a,'メニュー',()=>toMenu(),'ghost');
+ showScreen('result');
+}
+const fmtTime=ms=>{const s=Math.round(ms/1000);return (s>=60?Math.floor(s/60)+'分':'')+(s%60)+'びょう'};
+function ptcolHTML(who,plus,why,got){return `<div class="ptcol${got?' got':''}"><span class="who">${who}</span><span class="plus">${plus}点</span><span class="why">${why}</span></div>`}
+function logHTML(log){
+ if(!log.length)return '<span class="h">このステージの式</span><span class="note">まだ列を消していません</span>';
+ return '<span class="h">このステージの式（消した列・いしになった列）</span>'+log.map(l=>`<div class="eq${l.kind==='over'?' bad':''}">${l.kind==='one'?'○':'×'} ${l.eq}</div>`).join('');
+}
+function addBtn(box,label,fn,cls){const b=document.createElement('button');b.type='button';b.className='btn'+(cls?' '+cls:'');b.textContent=label;b.onclick=fn;box.appendChild(b);return b}
+
+/* ===== ふたり ===== */
+function startPvp(){S={stars:{A:0,B:0},carry:0,round:1,first:'A',res:{}};pvpRound()}
+function pvpRound(){
+ showScreen('');
+ S.seed=(Math.random()*2**32)>>>0;S.res={};S.order=S.first==='A'?['A','B']:['B','A'];S.turn=0;
+ const w=S.order[0];
+ showCover(w,`${S.round}回戦　${w}さんの番`,`${w}さんが遊びます。${S.order[1]}さんは画面を見ないでね。2人とも同じ順番でタイルが落ちてきます。`,'はじめる',()=>{hideCover();startPlay(pvpLv,S.seed,w)});
+}
+function pvpAfterTurn(){
+ showScreen(''); // 目かくしの下に前の人の盤を残さない
+ const w=S.order[S.turn];S.res[w]={pts:G.pts,cleared:G.cleared,stones:G.stones,tilePts:G.tilePts,diff:G.diffBonus,noHint:G.noHint,hint:G.hintUsed,topped:G.topped,log:G.log,time:G.time};
+ S.turn++;
+ if(S.turn<2){const nx=S.order[1];
+  showCover(nx,`${nx}さんにわたしてね`,`${w}さんはおわり。${nx}さんが同じタイルの順番で遊びます。点は最後にいっしょに見よう。`,`${nx}さん はじめる`,()=>{hideCover();startPlay(pvpLv,S.seed,nx)});
+  return;}
+ showCover('★','ふたりともおわり','いっしょに画面を見て、けっかを見よう','けっかを見る',()=>{hideCover();pvpResult()});
+}
+function pvpResult(){
+ const A=S.res.A,B=S.res.B;let win=null,by='点';
+ if(A.pts!==B.pts)win=A.pts>B.pts?'A':'B';
+ else if(A.stones!==B.stones){win=A.stones<B.stones?'A':'B';by='いし'}
+ else if(Math.round(A.time/1000)!==Math.round(B.time/1000)){win=A.time<B.time?'A':'B';by='時間'}
+ S.lastBy=win?by:'';
+ const gain=1+S.carry;
+ if(win){S.stars[win]+=gain;S.carry=0}else S.carry++;
+ const champ=S.stars.A>=CONFIG.winStars?'A':S.stars.B>=CONFIG.winStars?'B':null;
+ $('rTitle').textContent=`${S.round}回戦・レベル${pvpLv}`;
+ $('rStars').textContent=`A ${starStr(S.stars.A)}  B ${starStr(S.stars.B)}`;
+ const b=$('rBadge');b.className='role '+(win?'win':'');
+ b.textContent=champ?`${champ}さん 優勝！`:win?`${win}さんの勝ち`:'引き分け';
+ const why=by==='いし'?'同点なので、いしが少ないほうの勝ち。':by==='時間'?'点もいしも同じなので、早く置きおわったほうの勝ち。':'';
+ $('rLead').textContent=why+(champ?`★${CONFIG.winStars}つ先取！`:win?`${win}さんに★${gain>1?gain+'つ（持ちこし分も）':'1つ'}`:`★は次の回に持ちこし（いま ${S.carry}こ）`);
+ const col=(k,r)=>ptcolHTML(k+'さん',r.pts,`消した列 <b>${r.cleared}</b>（タイル ${r.tilePts}${mode==='diff'?`・通分 ${r.diff}`:''}）<br>ノーヒント ${r.noHint?'＋'+r.noHint:'なし'}・いし <b>${r.stones}</b><br>時間 ${fmtTime(r.time)}${r.topped?'<br>とちゅうで つみあがった':''}`,win===k);
+ $('rBoard').innerHTML=col('A',A)+col('B',B);
+ $('rList').innerHTML=`<span class="h">Aさんの式</span>${A.log.map(l=>`<div class="eq${l.kind==='over'?' bad':''}">${l.kind==='one'?'○':'×'} ${l.eq}</div>`).join('')||'<span class="note">なし</span>'}<span class="h" style="margin-top:6px">Bさんの式</span>${B.log.map(l=>`<div class="eq${l.kind==='over'?' bad':''}">${l.kind==='one'?'○':'×'} ${l.eq}</div>`).join('')||'<span class="note">なし</span>'}`;
+ const a=$('rActions');a.innerHTML='';
+ if(champ){sto.set('pvp-games',sto.get('pvp-games',0)+1);addBtn(a,'もう一度たいせん',()=>startPvp())}
+ else addBtn(a,'つぎの回へ',()=>{S.round++;S.first=S.first==='A'?'B':'A';pvpRound()});
+ addBtn(a,'メニュー',()=>toMenu(),'ghost');
+ showScreen('result');
+}
+
+/* ===== 画面 ===== */
+function showScreen(id){['menu','game','result','study'].forEach(k=>$(k).hidden=k!==id);scrollTo(0,0)}
+let coverFn=null;
+function showCover(icon,title,text,btn,fn){$('coverIcon').textContent=icon;$('coverTitle').textContent=title;$('coverText').textContent=text;$('coverBtn').textContent=btn;coverFn=fn;$('cover').classList.toggle('dim',icon==='Ⅱ');$('coverSub').hidden=icon!=='Ⅱ';$('coverSub').textContent='メニューにもどる';$('cover').hidden=false;$('coverBtn').focus()}
+function hideCover(){$('cover').hidden=true}
+$('coverBtn').onclick=()=>{const f=coverFn;coverFn=null;if(f)f()};
+$('coverSub').onclick=()=>{hideCover();toMenu()};
+function toMenu(){stopTick();if(G){G.over=true;G.cur=null}hideCover();refreshMenu();showScreen('menu')}
+
+/* ===== 操作 ===== */
+const board=$('board');
+let downAt=null;
+board.addEventListener('pointerdown',e=>{downAt={x:e.clientX,y:e.clientY,t:Date.now()}});
+board.addEventListener('pointerup',e=>{
+ if(!G||!G.cur||!downAt)return;
+ const dy=e.clientY-downAt.y,dx=e.clientX-downAt.x;downAt=null;
+ if(dy>40&&Math.abs(dy)>Math.abs(dx)){drop();return} // 下にスワイプ
+ const rect=board.getBoundingClientRect();const c=Math.floor((e.clientX-rect.left)/(rect.width/COLS));
+ if(c===G.cur.c)drop();else moveTo(c);
+});
+$('bLeft').onclick=()=>G&&G.cur&&moveTo(G.cur.c-1);
+$('bRight').onclick=()=>G&&G.cur&&moveTo(G.cur.c+1);
+$('bDrop').onclick=()=>drop();
+$('bHint').onclick=()=>setHint(!G.hintOn);
+$('bPause').onclick=()=>pause(true);
+$('toMenu').onclick=()=>toMenu();
+document.addEventListener('keydown',e=>{
+ if($('game').hidden||!$('cover').hidden||!G)return;
+ if(e.key==='ArrowLeft'){moveTo(G.cur?G.cur.c-1:0);e.preventDefault()}
+ else if(e.key==='ArrowRight'){moveTo(G.cur?G.cur.c+1:0);e.preventDefault()}
+ else if(e.key==='ArrowDown'||e.key===' '){drop();e.preventDefault()}
+ else if(e.key==='p'||e.key==='P')pause(true);
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&!G.over&&!G.paused&&!$('game').hidden)pause(true)});
+addEventListener('resize',()=>{if(!$('game').hidden)layout()});
+
+/* ===== メニュー ===== */
+function press(id,on){$(id).setAttribute('aria-pressed',on)}
+function setMode(m){mode=m;sto.set('mode',m);press('mdSame',m==='same');press('mdDiff',m==='diff');refreshMenu()}
+function setPlay(p){play=p;sto.set('play',p);press('plSolo',p==='solo');press('plPvp',p==='pvp');$('lvRow').hidden=p!=='pvp';refreshMenu()}
+$('mdSame').onclick=()=>setMode('same');$('mdDiff').onclick=()=>setMode('diff');
+$('plSolo').onclick=()=>setPlay('solo');$('plPvp').onclick=()=>setPlay('pvp');
+[...$('lvChips').children].forEach(b=>b.onclick=()=>{pvpLv=+b.dataset.lv;sto.set('lv',pvpLv);[...$('lvChips').children].forEach(x=>x.setAttribute('aria-pressed',x===b))});
+[...$('spChips').children].forEach(b=>b.onclick=()=>{speed=b.dataset.sp;sto.set('speed',speed);[...$('spChips').children].forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('startBtn').onclick=()=>play==='solo'?startSolo():startPvp();
+function refreshMenu(){
+ const best=sto.get('best-'+mode,0),cl=sto.get('clear-'+mode,0);
+ $('recs').innerHTML=play==='solo'?`<span>ぜんぶクリア <b>${cl}</b>回</span><span>自己ベスト <b>${best}</b>点</span>`:`<span>レベル${pvpLv}：${SETS[mode][pvpLv].label}</span><span>1人 ${CONFIG.pvpTiles}まい</span>`;
+ const n=studyCards().length;$('masteryNote').textContent=`おぼえた ${studyCards().filter(c=>mastered().has(c.id)).length}/${n}まい`;
+ const demo=mode==='same'?[[1,4],[2,4],[1,4]]:[[1,2],[1,3],[1,6]];
+ $('demo').innerHTML='';demo.forEach(([n,d])=>{const el=tileEl({n,d});el.classList.add('mini');el.style.width='';el.style.height='';$('demo').appendChild(el)});
+ $('demo').insertAdjacentHTML('beforeend','<span class="eq" style="align-self:center;font-size:1.2rem"><span class="op">＝</span><span class="one">1</span></span>');
+}
+
+/* ===== カードで覚える ===== */
+function studyCards(){
+ const cards=[];
+ if(mode==='same'){
+  [4,6,8].forEach(d=>{for(let n=1;n<d;n++)cards.push({id:`s-${n}-${d}`,kind:'1になるのは？',q:[{n,d}],a:{n:d-n,d}})});
+ }else{
+  [[[1,2],[1,4]],[[1,2],[1,3]],[[1,3],[1,6],[1,6]],[[1,4],[1,4],[1,3]],[[2,3],[1,6]],[[1,2],[1,6],[1,6]],[[1,3],[1,3]],[[3,4]]].forEach(q=>{
+   const v=q.reduce((s,[n,d])=>s+n*U/d,0),rest=U-v;let a=null;
+   for(const d of [2,3,4,6])if(rest*d%U===0){a={n:rest*d/U,d};break}
+   cards.push({id:'d-'+q.map(x=>x.join('/')).join('+'),kind:'1になるのは？',q:q.map(([n,d])=>({n,d})),a});
+  });
+  [[1,2,[4,6]],[1,3,[6,12]],[2,3,[6,12]],[1,4,[12]],[3,4,[12]],[1,6,[12]],[5,6,[12]]].forEach(([n,d,ds],i)=>{
+   cards.push({id:`e-${n}-${d}-${ds.join('.')}`,kind:'等しい分数',eqv:{n,d,ds}});
+  });
+ }
+ return cards;
+}
+function mastered(){return new Set(sto.get('mastered',[]))}
+function saveMastered(s){sto.set('mastered',[...s])}
+let sDeck=[],sCur=null,sDoneN=0,sTotal=0,sAll=false;
+function buildStudy(){const m=mastered();sDeck=studyCards().filter(c=>sAll||!m.has(c.id));for(let i=sDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sDeck[i],sDeck[j]]=[sDeck[j],sDeck[i]]}sTotal=sDeck.length;sDoneN=0;sCur=null;nextStudy()}
+function sStats(){$('sLeft').textContent=sDeck.length+(sCur?1:0);$('sDone').textContent=sDoneN;$('sBar').style.width=(sTotal?sDoneN/sTotal*100:0)+'%'}
+function cardFront(c){
+ if(c.eqv){const {n,d,ds}=c.eqv;return `<span class="kind">${c.kind}</span><div class="q">${frH(n,d)}${ds.map(x=>OP(' ＝ ')+`<span class="fr"><i><span class="ask">？</span></i><i>${x}</i></span>`).join('')}</div><span class="stap">タップでうらがえす</span>`}
+ return `<span class="kind">${c.kind}</span><div class="q">${c.q.map(t=>frH(t.n,t.d)).join(OP(' ＋ '))}${OP(' ＋ ')}<span class="ask">？</span>${OP(' ＝ ')}<span class="one">1</span></div><span class="stap">タップでうらがえす</span>`;
+}
+function cardBack(c){
+ if(c.eqv){const {n,d,ds}=c.eqv;return `<span class="kind">${c.kind}</span><div class="ans">${frH(n,d)}${ds.map(x=>OP(' ＝ ')+frH(n*x/d,x)).join('')}</div><div class="exp">分母と分子に 同じ数をかける</div>`}
+ const all=[...c.q,c.a];return `<span class="kind">${c.kind}</span><div class="ans">？＝${frH(c.a.n,c.a.d)}</div><div class="exp eq">${eqHTML(all,false)}</div>`;
+}
+function nextStudy(){
+ const sc=$('scard');sc.classList.remove('flip');sStats();
+ if(!sDeck.length){sCur=null;$('sFront').innerHTML=`<div class="sdone"><span class="big" style="color:var(--ink)">ぜんぶ見たよ</span><span>おぼえた ${studyCards().filter(c=>mastered().has(c.id)).length}/${studyCards().length}まい</span></div>`;refreshMenu();$('sActions').innerHTML='';const a=$('sActions');addBtn(a,'もう一度',()=>buildStudy());addBtn(a,'メニュー',()=>toMenu(),'ghost');return}
+ sCur=sDeck.shift();sStats();
+ setTimeout(()=>{$('sFront').innerHTML=cardFront(sCur);$('sBack').innerHTML=cardBack(sCur)},RM?0:200);
+ $('sActions').innerHTML='';
+}
+function flipStudy(){
+ if(!sCur)return;const sc=$('scard');if(sc.classList.contains('flip'))return;sc.classList.add('flip');
+ const a=$('sActions');a.innerHTML='';
+ addBtn(a,'もう一回',()=>{sDeck.push(sCur);sCur=null;nextStudy()},'again');
+ addBtn(a,'おぼえた！',()=>{const m=mastered();m.add(sCur.id);saveMastered(m);sDoneN++;sCur=null;nextStudy()});
+}
+$('scard').onclick=flipStudy;
+$('studyBtn').onclick=()=>{$('studyTitle').textContent=mode==='same'?'同じ分母（3・4年）':'ちがう分母（5年）';showScreen('study');buildStudy()};
+$('studyToMenu').onclick=()=>toMenu();
+$('ssTodo').onclick=()=>{sAll=false;press('ssTodo',true);press('ssAll',false);buildStudy()};
+$('ssAll').onclick=()=>{sAll=true;press('ssTodo',false);press('ssAll',true);buildStudy()};
+$('sReset').onclick=()=>{if(confirm('おぼえた記録をけしますか？')){saveMastered(new Set());buildStudy();refreshMenu()}};
+
+/* ===== チュートリアル ===== */
+const mt=(n,d,cls)=>`<div class="tile mini d${d}${cls?' '+cls:''}">${frH(n,d)}</div>`;
+const TUT=[
+ {t:'分数のタイルが落ちてくる',x:'上から1まいずつ落ちてきます。下にある「つぎ」は、そのあとに来るタイルです。',a:()=>mt(1,4)+mt(3,4)+mt(1,2)},
+ {t:'横1列が ぴったり1 で消える',x:'横にならんだタイルの合計が ちょうど1 になると、その列が消えて点になります。',a:()=>`<div class="tline ok">${mt(1,4)+mt(2,4)+mt(1,4)}</div><span class="tbig">＝1</span>`},
+ {t:'1をこえると いしになる',x:'置いたタイルで1をこえると、そのタイルは「いし」になって場所をふさぎます。置く前に計算しよう。',a:()=>`<div class="tline">${mt(3,4)}<div class="tile mini stone d2">${frH(1,2)}</div></div>`},
+ {t:'列をタップして動かす',x:'動かしたい列をタップ。同じ列をもう一度タップ（または ▼）で、すぐに落ちます。◀ ▶ ボタンでも動かせます。',a:()=>`<span class="tbig">タップ → ▼</span>`},
+ {t:'合計は自分で計算',x:'列の合計は画面に出ません。ヒント（ものさし）で長さが見えますが、ノーヒントボーナス＋5点がなくなります。ひとりなら、決まった数のタイルで目標の列を消してステージクリア。★3つでクリア！',a:()=>`<span class="tbig">★★★</span>`},
+];
+let tutI=0;
+function tutRender(){const s=TUT[tutI];$('tutArt').innerHTML=s.a();$('tutTitle').textContent=s.t;$('tutText').textContent=s.x;$('tutDots').innerHTML=TUT.map((_,i)=>`<i class="${i===tutI?'on':''}"></i>`).join('');$('tutBack').disabled=tutI===0;$('tutNext').textContent=tutI===TUT.length-1?'はじめる':'つぎへ'}
+function tutOpen(){tutI=0;tutRender();$('tut').hidden=false;$('tutNext').focus()}
+function tutClose(){$('tut').hidden=true;sto.set('tutorial',1)}
+$('tutOpen').onclick=tutOpen;$('tutSkip').onclick=tutClose;
+$('tutBack').onclick=()=>{if(tutI>0){tutI--;tutRender()}};
+$('tutNext').onclick=()=>{if(tutI<TUT.length-1){tutI++;tutRender()}else tutClose()};
+
+/* ===== はじめ ===== */
+drawLanes();drawGauge();
+setMode(mode);setPlay(play);
+[...$('lvChips').children].forEach(x=>x.setAttribute('aria-pressed',+x.dataset.lv===pvpLv));
+[...$('spChips').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.sp===speed));
+if(!sto.get('tutorial',0))tutOpen();
+// 検証用（画面からは使わない）
+window.__pt1={get G(){return G},get S(){return S},CONFIG,SETS,U,combosOf,eqText,rowSum,moveTo,drop,lock,tick};
+</script>
+</body>
+</html>
